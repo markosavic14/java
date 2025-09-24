@@ -1,5 +1,7 @@
 // Marko Savic e1 15/2024
 
+import java.util.Random;
+
 public class RNG {
     private int minimumValue;
     private int maximumValue;

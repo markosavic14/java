@@ -1,5 +1,8 @@
 // Marko Savic e1 15/2024
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Simulate {
@@ -8,14 +11,14 @@ public class Simulate {
 
         Championship championship = new Championship();
         try {
-            championship.readDriversFromFile("drivers.txt");
-            championship.readVenuesFromFile("venues.txt");
+            championship.readDriversFromFile("D:\\\\java\\\\z1\\\\vozaci.txt");
+            championship.readVenuesFromFile("D:\\java\\z1\\staze.txt");
         } catch (IOException e) {
             System.err.println("Error reading files: " + e.getMessage());
             return;
         }
 
-                System.out.print("Unesite broj trka u sezoni: ");
+        System.out.print("Unesite broj trka u sezoni: ");
         int number = scanner.nextInt();
         // Validacija broja trka
         if (number < 3 || number > 5) {
@@ -28,13 +31,13 @@ public class Simulate {
         System.out.println("Uneli ste broj: " + number);
 
         // Odabir staza za svaku trku
-        List<String> availableVenues = new ArrayList<>(championship.getVenues());
-        List<String> selectedVenues = new ArrayList<>();
+        List<Venue> availableVenues = new ArrayList<>(championship.getVenues());
+        List<Venue> selectedVenues = new ArrayList<>();
 
         for (int i = 1; i <= number; i++) {
             System.out.println("Dostupne staze za trku " + i + ":");
             for (int j = 0; j < availableVenues.size(); j++) {
-            System.out.println((j + 1) + ". " + availableVenues.get(j));
+            System.out.println((j + 1) + ". " + availableVenues.get(j).getVenueName());
             }
             System.out.print("Izaberite redni broj staze za trku " + i + ": ");
             int venueIndex = scanner.nextInt() - 1;
@@ -42,13 +45,10 @@ public class Simulate {
             System.out.print("Pogrešan unos. Izaberite ponovo: ");
             venueIndex = scanner.nextInt() - 1;
             }
-            String chosenVenue = availableVenues.remove(venueIndex);
+            Venue chosenVenue = availableVenues.remove(venueIndex);
             selectedVenues.add(chosenVenue);
             System.out.println("Izabrali ste stazu: " + chosenVenue);
         }
-
-        championship.setSeasonVenues(selectedVenues);
         scanner.close();
-
-        championship.prepareForTheRace();
+}
 }

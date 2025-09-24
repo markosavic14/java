@@ -55,11 +55,11 @@ public class Driver {
     public void setAccumulatedPoints(int accumulatedPoints) {
         this.accumulatedPoints = accumulatedPoints;
     }
-    public driver() {
+    public Driver() {
         // Default constructor
     }
 
-    public driver(String name, int ranking, String specialSkill, boolean eligibleToRace, int accumulatedTime, int accumulatedPoints) {
+    public Driver(String name, int ranking, String specialSkill, boolean eligibleToRace, int accumulatedTime, int accumulatedPoints) {
         this.name = name;
         this.ranking = ranking;
         this.specialSkill = specialSkill;

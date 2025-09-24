@@ -1,5 +1,10 @@
 // Marko Savic e1 15/2024
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
 public class Championship{
     private ArrayList<Driver> drivers;
     private ArrayList<Venue> venues;
@@ -32,30 +37,6 @@ public class Championship{
     public Championship(ArrayList<Driver> drivers, ArrayList<Venue> venues) {
         this.drivers = drivers;
         this.venues = venues;
-    }
-
-    public void readDriversFromFile(String filename) throws IOException {
-        ArrayList<Driver> loadedDrivers = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                // Assuming Driver has a constructor that takes a line or a static parse method
-                loadedDrivers.add(Driver.parse(line));
-            }
-        }
-        setDrivers(loadedDrivers);
-    }
-
-    public void readVenuesFromFile(String filename) throws IOException {
-        ArrayList<Venue> loadedVenues = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                // Assuming Venue has a constructor that takes a line or a static parse method
-                loadedVenues.add(Venue.parse(line));
-            }
-        }
-        setVenues(loadedVenues);
     }
 
     public void prepareForTheRace() {
