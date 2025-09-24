@@ -83,19 +83,23 @@ public class Driver implements Comparable<Driver> {
 
     public void useSpecialSkill() {
         if (!eligibleToRace) {
-            return; // Cannot use skill if not eligible
+            return;
         } else if (specialSkill.equals("Overtaking") && lapCount % 3 == 0) {
             RNG rng = new RNG(10, 20);
-            accumulatedTime -= rng.getRandomValue();
+            int penalty = rng.getRandomValue();
+            accumulatedTime -= penalty;
+            System.out.println(name + " koristi specijalnu vestinu " + specialSkill + " i skida " + penalty + " sekundi sa svog vremena.");
         } else if (specialSkill.equals("Braking") || specialSkill.equals("Cornering")) {
             RNG rng = new RNG(1, 8);
-            accumulatedTime -= rng.getRandomValue();
+            int penalty = rng.getRandomValue();
+            accumulatedTime -= penalty;
+            System.out.println(name + " koristi specijalnu vestinu " + specialSkill + " i skida " + penalty + " sekundi sa svog vremena.");
         }
     }
 
     @Override
     public int compareTo(Driver o) {
-        return Integer.compare(this.ranking, o.ranking);
+        return Integer.compare(this.getAccumulatedTime(), o.getAccumulatedTime());
     }
 
 }

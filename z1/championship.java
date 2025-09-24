@@ -1,6 +1,7 @@
 // Marko Savic e1 15/2024
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Championship{
     private ArrayList<Driver> drivers;
@@ -76,11 +77,29 @@ public class Championship{
     }
 
     public void prepareForTheRace() {
+        drivers.sort((d1, d2) -> Integer.compare(d1.getRanking(), d2.getRanking()));
         for (Driver driver : drivers) {
             driver.setEligibleToRace(true);
-            driver.setAccumulatedTime(0);
-            driver.setAccumulatedPoints(0);
             driver.setWinterTireUsed(false);
+            driver.setAccumulatedTime(0);
+        }
+        int[] rankingPenalty = {0, 3, 5, 7, 10};
+        for (int i = 0; i < drivers.size(); i++) {
+            int penalty = (i < rankingPenalty.length) ? rankingPenalty[i] : 10;
+            Driver driver = drivers.get(i);
+            driver.setAccumulatedTime(driver.getAccumulatedTime() + penalty);
+            System.out.println((i + 1) + ". renking " + driver.getName() + " - Vremenska kazna: dodato " + penalty + " sekundi.");
+        }
+    }
+
+    public void updateDriverRankings() {
+        drivers.sort((d1, d2) -> Integer.compare(d1.getAccumulatedTime(), d2.getAccumulatedTime()));
+        for (int i = 0; i < drivers.size(); i++) {
+            if(i>4){
+                drivers.get(i).setRanking(5);
+            } else{
+                drivers.get(i).setRanking(i + 1);
+            }
         }
     }
 
@@ -158,12 +177,25 @@ public class Championship{
     }
 
     public void printWinnersAfterRace(String venueName){
-            // TODO ispiši imena pobednika
-            // (četiri najbolje rangirana vozača) na stazi venueName
+        Collections.sort(drivers);
+        System.out.println("Rezultati trke na stazi: " + venueName);
+        int[] pointsDistribution = {8, 5, 3, 1};
+        for (int i = 0; i < Math.min(4, drivers.size()); i++) {
+            Driver driver = drivers.get(i);
+            driver.setAccumulatedPoints(driver.getAccumulatedPoints() + pointsDistribution[i]);
+            System.out.println((i + 1) + ". " + driver.getName() + " - Vreme: " + driver.getAccumulatedTime() + " sekundi, Poeni: " + pointsDistribution[i]);
+        }
+        updateDriverRankings();
     }
 
     public void printChampion(int numOfRaces){
-        // TODO  ispisati poruku o tome ko je
-        // šampion na kraju šampionata, tj. nakon numOfRaces odvozanih trka
+        drivers.sort((d1, d2) -> Integer.compare(d1.getAccumulatedPoints(), d2.getAccumulatedPoints()));
+        Driver champion = drivers.get(drivers.size() - 1);
+        System.out.println("Sampion nakon " + numOfRaces + " trka je: " + champion.getName() + " sa " + champion.getAccumulatedPoints() + " poena.");
+        System.out.println("Ukupni plasman:");
+        for (int i = drivers.size() - 1, place = 1; i >= 0; i--, place++) {
+            Driver driver = drivers.get(i);
+            System.out.println(place + ". " + driver.getName() + " - Poeni: " + driver.getAccumulatedPoints());
+        }
     }
 }

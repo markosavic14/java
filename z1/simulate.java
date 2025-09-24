@@ -50,9 +50,6 @@ public class Simulate {
         // Simulacija trka
         int numOfRaces = 0;
         for (Venue venue : selectedVenues) {
-            numOfRaces += venue.getNumberOfLaps();
-        }
-        for (Venue venue : selectedVenues) {
             System.out.println("#####################################");
             System.out.println("Simulacija " + (selectedVenues.indexOf(venue) + 1) + ". trke na stazi: " + venue.getVenueName());
             System.out.println("#####################################");
@@ -65,9 +62,11 @@ public class Simulate {
                 championship.driveAverageLapTime(venue.getAverageLapTime());
                 championship.applySpecialSkill();
                 championship.checkMechanicalProblem();
-                championship.printLeader(selectedVenues.indexOf(venue) + 1 + i + 1); // indeks staze (+1) + indeks kruga (+1)
+                championship.printLeader(i + 1); // indeks staze (+1) + indeks kruga (+1)
+                numOfRaces += 1;
             }
+            championship.printWinnersAfterRace(venue.getVenueName());
         }
-        //championship.printChampion(numOfRaces);
+        championship.printChampion(numOfRaces);
 }
 }
