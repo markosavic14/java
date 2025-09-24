@@ -33,14 +33,11 @@ public class Venue {
         this.venueName = venueName;
     }
 
-    public Venue() {
-    }
-
-    public Venue(String venueName, int averageLapTime, double chanceOfRain, int numberOfLaps) {
+    public Venue(String venueName, int numberOfLaps, int averageLapTime, double chanceOfRain) {
         this.venueName = venueName;
+        this.numberOfLaps = numberOfLaps;
         this.averageLapTime = averageLapTime;
         this.chanceOfRain = chanceOfRain;
-        this.numberOfLaps = numberOfLaps;
     }
 
 }
