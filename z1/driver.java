@@ -81,16 +81,18 @@ public class Driver implements Comparable<Driver> {
         this.isWinterTireUsed = false;
     }
 
-    public void useSpecialSkill() {
+    public void useSpecialSkill(RNG rng) {
         if (!eligibleToRace) {
             return;
         } else if (specialSkill.equals("Overtaking") && lapCount % 3 == 0) {
-            RNG rng = new RNG(10, 20);
+            rng.setMinimumValue(10);
+            rng.setMaximumValue(20);
             int penalty = rng.getRandomValue();
             accumulatedTime -= penalty;
             System.out.println(name + " koristi specijalnu vestinu " + specialSkill + " i skida " + penalty + " sekundi sa svog vremena.");
         } else if (specialSkill.equals("Braking") || specialSkill.equals("Cornering")) {
-            RNG rng = new RNG(1, 8);
+            rng.setMinimumValue(1);
+            rng.setMaximumValue(8);
             int penalty = rng.getRandomValue();
             accumulatedTime -= penalty;
             System.out.println(name + " koristi specijalnu vestinu " + specialSkill + " i skida " + penalty + " sekundi sa svog vremena.");

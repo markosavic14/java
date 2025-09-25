@@ -36,6 +36,6 @@ public class RNG {
     }
 
     public int getRandomValue() {
-        return rnd.nextInt((maximumValue - minimumValue) + 1) + minimumValue;
+        return rnd.nextInt(minimumValue, maximumValue+1);
     }
 }

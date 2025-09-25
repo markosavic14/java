@@ -7,9 +7,9 @@ public class Championship{
     private ArrayList<Driver> drivers;
     private ArrayList<Venue> venues;
 
-    public static final int MINOR_MECHANICAL_FAULT = 5;
-    public static final int MAJOR_MECHANICAL_FAULT = 3;
-    public static final int UNRECOVERABLE_MECHANICAL_FAULT = 1;
+    final int MINOR_MECHANICAL_FAULT = 5;
+    final int MAJOR_MECHANICAL_FAULT = 3;
+    final int UNRECOVERABLE_MECHANICAL_FAULT = 1;
 
     public ArrayList<Driver> getDrivers() {
         return drivers;
@@ -25,11 +25,6 @@ public class Championship{
 
     public void setVenues(ArrayList<Venue> venues) {
         this.venues = venues;
-    }
-
-    public Championship() {
-        this.drivers = new ArrayList<>();
-        this.venues = new ArrayList<>();
     }
 
     public Championship(String drivers_path, String venues_path) {
@@ -114,14 +109,18 @@ public class Championship{
     }
 
     public void applySpecialSkill(){
+        RNG rng = new RNG();
         for (Driver driver : drivers) {
-            driver.useSpecialSkill();
+            driver.useSpecialSkill(rng);
         }
     }
 
     public void checkMechanicalProblem(){
         for (Driver driver : drivers) {
-            RNG rng = new RNG(1, 100);
+            if (!driver.isEligibleToRace()) {
+                continue;
+            }
+            RNG rng = new RNG(0, 100);
             if (rng.getRandomValue() <= MINOR_MECHANICAL_FAULT) {
                 driver.setAccumulatedTime(driver.getAccumulatedTime() + 20); // add penalty
                 System.out.println(driver.getName() + " je imao manji mehanicki kvar i dobija kaznu od 20 sekundi.");
@@ -136,10 +135,13 @@ public class Championship{
     }
 
     public void checkForRain(double chanceOfRain, int lapCount){
-        RNG rng = new RNG(1, 100);
+        RNG rng = new RNG(0, 100);
         RNG rng2 = new RNG(0, 1);
         boolean isRaining = rng.getRandomValue() <= chanceOfRain * 100;
         for (Driver driver : drivers) {
+            if (!driver.isEligibleToRace()) {
+                continue;
+            }
             if(lapCount == 2 && rng2.getRandomValue() == 1 && !driver.getWinterTireUsed()){
                 driver.setWinterTireUsed(true);
                 driver.setAccumulatedTime(driver.getAccumulatedTime() + 10);
@@ -150,6 +152,9 @@ public class Championship{
         if (isRaining) {
             System.out.println("Pada kisa! Nadamo se da vozaci imaju pneumatike za kisu.");
             for (Driver driver : drivers) {
+                if(!driver.isEligibleToRace()){
+                    continue;
+                }
                 if (!driver.getWinterTireUsed()) {
                     driver.setAccumulatedTime(driver.getAccumulatedTime() + 5); // penalty for switching to winter tires
                     System.out.println(driver.getName() + " nema zimske gume i dobio je 5 sekundi kazne.");
@@ -191,6 +196,7 @@ public class Championship{
     public void printChampion(int numOfRaces){
         drivers.sort((d1, d2) -> Integer.compare(d1.getAccumulatedPoints(), d2.getAccumulatedPoints()));
         Driver champion = drivers.get(drivers.size() - 1);
+        System.out.println("#####################################");
         System.out.println("Sampion nakon " + numOfRaces + " trka je: " + champion.getName() + " sa " + champion.getAccumulatedPoints() + " poena.");
         System.out.println("Ukupni plasman:");
         for (int i = drivers.size() - 1, place = 1; i >= 0; i--, place++) {
