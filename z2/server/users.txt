@@ -1,0 +1,4 @@
+root:admin:admin
+marko:marko:student
+petar123:petar:student
+deki:deki:admin
