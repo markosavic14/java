@@ -1,8 +1,11 @@
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 
-public class Student {
+public class Student implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private String username;
     private String name;
     private String lastName;
@@ -12,6 +15,14 @@ public class Student {
 
     public String getName(){
         return this.name;
+    }
+
+    public String getLastName(){
+        return this.lastName;
+    }
+
+    public String getJmbg(){
+        return this.jmbg;
     }
 
     public String getIndexNum(){
@@ -39,10 +50,8 @@ public class Student {
         }
         String day = jmbg.substring(0, 2);
         String month = jmbg.substring(2, 4);
-        String year = jmbg.substring(10, 13);
         int dayInt = Integer.parseInt(day);
         int monthInt = Integer.parseInt(month);
-        int yearInt = Integer.parseInt(year);
         if (dayInt < 1 || dayInt > 31) {
             throw new IllegalArgumentException("Nevalidan dan u JMBG.");
         }
@@ -50,6 +59,7 @@ public class Student {
             throw new IllegalArgumentException("Nevalidan mesec u JMBG.");
         }
         this.jmbg = jmbg;
+        this.courses = new ArrayList<>(); // Initialize the courses list
     }
 
     public void dodajPredmet(Course course) {

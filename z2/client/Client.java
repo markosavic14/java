@@ -88,9 +88,8 @@ public class Client {
         javax.swing.SwingUtilities.invokeLater(() -> {
             // Create the window
             windowCreator.run();
-            
-            // Since we can't directly wait for the window to close without knowing its type,
-            // we'll use a different approach - wait for the EDT to be idle and then
+
+            // Wait for the EDT to be idle and then
             // periodically check if there are any visible windows
             new Thread(() -> {
                 try {
