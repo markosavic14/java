@@ -292,6 +292,27 @@ public class GameActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void showGameOverDialog(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Game Over!");
+        builder.setMessage(message);
+        builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                resetGame();
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
     private void resetGame() {
         // Reset game board
         for (int row = 0; row < ROWS; row++) {
