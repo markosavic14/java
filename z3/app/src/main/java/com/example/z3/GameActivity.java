@@ -37,6 +37,7 @@ public class GameActivity extends AppCompatActivity {
     private ImageView[][] gameGrid = new ImageView[ROWS][COLS];
     private TextView gameStatus;
     private Button resetButton;
+    private Button forfeitButton;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,12 +103,22 @@ public class GameActivity extends AppCompatActivity {
         try {
             gameStatus = findViewById(R.id.gameStatus);
             resetButton = findViewById(R.id.resetButton);
+            forfeitButton = findViewById(R.id.forfeitButton);
             
             if (resetButton != null) {
                 resetButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         resetGame();
+                    }
+                });
+            }
+            
+            if (forfeitButton != null) {
+                forfeitButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        forfeitGame();
                     }
                 });
             }
@@ -297,6 +308,48 @@ public class GameActivity extends AppCompatActivity {
         updateGameStatus();
         
         Toast.makeText(this, "Game reset! " + player1Name + " starts.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void forfeitGame() {
+        if (gameOver) {
+            Toast.makeText(this, "Game is already over!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Forfeit Game");
+        
+        String currentPlayerName = (currentPlayer == PLAYER1) ? player1Name : player2Name;
+        String opponentName = (currentPlayer == PLAYER1) ? player2Name : player1Name;
+        
+        builder.setMessage("Are you sure you want to forfeit the game? " + opponentName + " will win.");
+        
+        builder.setPositiveButton("Yes, Forfeit", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // End the game with opponent as winner
+                gameOver = true;
+                String winnerName = (currentPlayer == PLAYER1) ? player2Name : player1Name;
+                
+                if (gameStatus != null) {
+                    gameStatus.setText(currentPlayerName + " forfeited! " + winnerName + " wins!");
+                }
+                
+                Toast.makeText(GameActivity.this, currentPlayerName + " forfeited the game!", Toast.LENGTH_LONG).show();
+                
+                // Show game over dialog
+                showGameOverDialog(winnerName + " wins by forfeit!");
+            }
+        });
+        
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        builder.show();
     }
 
     @Override

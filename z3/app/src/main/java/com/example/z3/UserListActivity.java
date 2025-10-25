@@ -15,11 +15,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,13 +30,11 @@ public class UserListActivity extends Activity {
     private TextView welcomeText;
     private Button refreshButton;
     private Button startGameButton;
+    private Button logoutButton;
     private ExecutorService executorService;
     private Handler mainHandler;
     private ArrayAdapter<String> userAdapter;
     private List<String> activeUsers;
-    private Socket persistentSocket;
-    private PrintWriter socketOut;
-    private BufferedReader socketIn;
     private boolean isConnectedToServer = false;
 
     @Override
@@ -64,6 +57,7 @@ public class UserListActivity extends Activity {
         userListView = findViewById(R.id.userListView);
         refreshButton = findViewById(R.id.refreshButton);
         startGameButton = findViewById(R.id.startGameButton);
+        logoutButton = findViewById(R.id.logoutButton);
 
         // Set welcome message
         welcomeText.setText("Welcome, " + currentUsername + "!");
@@ -85,6 +79,13 @@ public class UserListActivity extends Activity {
             @Override
             public void onClick(View v) {
                 startGame();
+            }
+        });
+
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                logout();
             }
         });
 
@@ -114,86 +115,42 @@ public class UserListActivity extends Activity {
     }
 
     private void establishPersistentConnection() {
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // Create persistent connection to server
-                    persistentSocket = new Socket(serverIP, port);
-                    socketOut = new PrintWriter(persistentSocket.getOutputStream(), true);
-                    socketIn = new BufferedReader(new InputStreamReader(persistentSocket.getInputStream()));
-                    
-                    // Re-authenticate to maintain session
-                    socketOut.println("LOGIN:" + currentUsername + ":dummy"); // Password not needed for reconnection
-                    String authResponse = socketIn.readLine();
-                    
-                    if ("AUTH_SUCCESS".equals(authResponse)) {
-                        isConnectedToServer = true;
-                        
-                        // Start listening for incoming messages in a separate thread
-                        Thread listenerThread = new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                listenForServerMessages();
-                            }
-                        });
-                        listenerThread.start();
-                        
-                        // Get initial active users list
-                        refreshActiveUsers();
-                        
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Connected to server", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        
-                    } else {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Failed to connect to server", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                    
-                } catch (IOException e) {
-                    mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(UserListActivity.this, "Connection error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        // Use the existing connection from ConnectionManager
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        
+        if (connectionManager.isConnected()) {
+            isConnectedToServer = true;
+            
+            // Set up message listener for this activity
+            connectionManager.setConnectionListener(new ConnectionManager.ConnectionListener() {
+                @Override
+                public void onMessageReceived(String message) {
+                    handleServerMessage(message);
                 }
-            }
-        });
-    }
-
-    private void listenForServerMessages() {
-        try {
-            String message;
-            while (isConnectedToServer && (message = socketIn.readLine()) != null) {
-                final String finalMessage = message;
                 
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        handleServerMessage(finalMessage);
-                    }
-                });
-            }
-        } catch (IOException e) {
-            if (isConnectedToServer) {
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(UserListActivity.this, "Lost connection to server", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
+                @Override
+                public void onConnectionLost() {
+                    isConnectedToServer = false;
+                    Toast.makeText(UserListActivity.this, "Lost connection to server", Toast.LENGTH_SHORT).show();
+                }
+                
+                @Override
+                public void onConnectionEstablished() {
+                    isConnectedToServer = true;
+                    Toast.makeText(UserListActivity.this, "Connected to server", Toast.LENGTH_SHORT).show();
+                }
+            });
+            
+            // Get initial active users list
+            refreshActiveUsers();
+            
+            Toast.makeText(UserListActivity.this, "Connected to server", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(UserListActivity.this, "No connection to server", Toast.LENGTH_SHORT).show();
         }
     }
+
+
 
     private void handleServerMessage(String message) {
         if (message.startsWith("ACTIVE_USERS:")) {
@@ -231,50 +188,19 @@ public class UserListActivity extends Activity {
     }
 
     private void refreshActiveUsers() {
-        if (isConnectedToServer && socketOut != null) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        socketOut.println("GET_ACTIVE_USERS");
-                    } catch (Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Error refreshing user list", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            });
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        if (connectionManager.isConnected()) {
+            connectionManager.sendMessage("GET_ACTIVE_USERS");
         } else {
             Toast.makeText(this, "Not connected to server", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void sendConnectionRequest(String targetUsername) {
-        if (isConnectedToServer && socketOut != null) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        socketOut.println("CONNECT_REQUEST:" + targetUsername);
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Connection request sent to " + targetUsername, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    } catch (Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Error sending connection request", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            });
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        if (connectionManager.isConnected()) {
+            connectionManager.sendMessage("CONNECT_REQUEST:" + targetUsername);
+            Toast.makeText(UserListActivity.this, "Connection request sent to " + targetUsername, Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Not connected to server", Toast.LENGTH_SHORT).show();
         }
@@ -306,33 +232,14 @@ public class UserListActivity extends Activity {
     }
 
     private void respondToConnectionRequest(String requesterUsername, boolean accept) {
-        if (isConnectedToServer && socketOut != null) {
-            executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if (accept) {
-                            socketOut.println("CONNECT_ACCEPT:" + requesterUsername);
-                            // Navigate to game
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    navigateToGame(requesterUsername);
-                                }
-                            });
-                        } else {
-                            socketOut.println("CONNECT_DECLINE:" + requesterUsername);
-                        }
-                    } catch (Exception e) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(UserListActivity.this, "Error responding to connection request", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-            });
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        if (connectionManager.isConnected()) {
+            if (accept) {
+                connectionManager.sendMessage("CONNECT_ACCEPT:" + requesterUsername);
+                navigateToGame(requesterUsername);
+            } else {
+                connectionManager.sendMessage("CONNECT_DECLINE:" + requesterUsername);
+            }
         }
     }
 
@@ -358,18 +265,20 @@ public class UserListActivity extends Activity {
 
     private void closePersistentConnection() {
         isConnectedToServer = false;
-        try {
-            if (socketOut != null) {
-                socketOut.close();
-            }
-            if (socketIn != null) {
-                socketIn.close();
-            }
-            if (persistentSocket != null && !persistentSocket.isClosed()) {
-                persistentSocket.close();
-            }
-        } catch (IOException e) {
-            // Handle cleanup errors silently
-        }
+        // Connection is managed by ConnectionManager, no need to close here
+    }
+
+    private void logout() {
+        // Close connection and return to login screen
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        connectionManager.closeConnection();
+        
+        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+        
+        // Return to LoginActivity
+        Intent loginIntent = new Intent(UserListActivity.this, LoginActivity.class);
+        loginIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(loginIntent);
+        finish();
     }
 }

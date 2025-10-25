@@ -149,41 +149,31 @@ public class LoginActivity extends Activity {
     }
 
     private void performLogin(String serverIP, int port, String username, String password) {
-        executorService.execute(new Runnable() {
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        
+        connectionManager.connect(serverIP, port, username, password, new ConnectionManager.ConnectionCallback() {
             @Override
-            public void run() {
-                String result = null;
-                try {
-                    // Connect to server
-                    Socket socket = new Socket(serverIP, port);
-                    
-                    // Set up communication streams
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    
-                    // Send login data
-                    // Format: LOGIN:username:password
-                    String loginData = "LOGIN:" + username + ":" + password;
-                    out.println(loginData);
-                    
-                    // Read server response
-                    result = in.readLine();
-                    
-                    // Close connection
-                    socket.close();
-                    
-                } catch (IOException e) {
-                    result = "Connection error: " + e.getMessage();
-                }
+            public void onSuccess() {
+                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_LONG).show();
+                
+                // Navigate to UserListActivity with connection maintained
+                Intent intent = new Intent(LoginActivity.this, UserListActivity.class);
+                intent.putExtra("serverIP", serverIP);
+                intent.putExtra("port", port);
+                intent.putExtra("username", username);
+                startActivity(intent);
+                
+                // Don't finish this activity yet, let UserListActivity handle it
+                finish();
+            }
 
-                // Handle response on main thread
-                final String finalResult = result;
-                mainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        handleLoginResponse(finalResult, username);
-                    }
-                });
+            @Override
+            public void onFailure(String error) {
+                if (error.equals("AUTH_FAILURE")) {
+                    Toast.makeText(LoginActivity.this, "Login failed. Invalid username or password.", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Connection error: " + error, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
@@ -228,31 +218,7 @@ public class LoginActivity extends Activity {
         });
     }
 
-    private void handleLoginResponse(String result, String username) {
-        if (result != null) {
-            if (result.equals("AUTH_SUCCESS")) {
-                Toast.makeText(this, "Login successful!", Toast.LENGTH_LONG).show();
-                
-                // Navigate to UserListActivity instead of GameActivity
-                Intent intent = new Intent(LoginActivity.this, UserListActivity.class);
-                // Pass server connection details to UserListActivity
-                intent.putExtra("serverIP", editTextServerIP.getText().toString().trim());
-                intent.putExtra("port", Integer.parseInt(editTextPort.getText().toString().trim()));
-                intent.putExtra("username", username);
-                startActivity(intent);
-                
-                // Optional: finish this activity so user can't go back to login
-                finish();
-                
-            } else if (result.equals("AUTH_FAILURE")) {
-                Toast.makeText(this, "Login failed. Invalid username or password.", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, "Server response: " + result, Toast.LENGTH_LONG).show();
-            }
-        } else {
-            Toast.makeText(this, "No response from server", Toast.LENGTH_SHORT).show();
-        }
-    }
+
 
     private void handleRegistrationResponse(String result) {
         if (result != null) {

@@ -569,12 +569,26 @@
     <!-- Reset Button -->
     <Button
         android:id="@+id/resetButton"
-        android:layout_width="200dp"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:text="Reset Game"
         android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/forfeitButton" />
+
+    <!-- Forfeit Button -->
+    <Button
+        android:id="@+id/forfeitButton"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Forfeit"
+        android:backgroundTint="#FF6B6B"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/resetButton"
         app:layout_constraintEnd_toEndOf="parent" />
 
 
