@@ -6,16 +6,38 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".GameActivity"
-    android:layout_gravity="center"
-    android:layout_marginTop="100dp"
-    android:layout_marginBottom="100dp">
+    android:layout_gravity="center">
+
+    <!-- Game Status Text -->
+    <TextView
+        android:id="@+id/gameStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Player 1's turn"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Connect 4 Game Grid -->
 
     <LinearLayout
+        android:id="@+id/gameBoard"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="0dp"
         android:orientation="horizontal"
         android:weightSum="70"
-        android:gravity="center">
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/gameStatus"
+        app:layout_constraintBottom_toTopOf="@id/resetButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -543,6 +565,17 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Reset Button -->
+    <Button
+        android:id="@+id/resetButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Reset Game"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
