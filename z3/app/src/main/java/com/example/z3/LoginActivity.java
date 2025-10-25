@@ -233,11 +233,11 @@ public class LoginActivity extends Activity {
             if (result.equals("AUTH_SUCCESS")) {
                 Toast.makeText(this, "Login successful!", Toast.LENGTH_LONG).show();
                 
-                // Navigate to GameActivity
-                Intent intent = new Intent(LoginActivity.this, GameActivity.class);
-                // Pass server connection details to GameActivity if needed
+                // Navigate to UserListActivity instead of GameActivity
+                Intent intent = new Intent(LoginActivity.this, UserListActivity.class);
+                // Pass server connection details to UserListActivity
                 intent.putExtra("serverIP", editTextServerIP.getText().toString().trim());
-                intent.putExtra("port", editTextPort.getText().toString().trim());
+                intent.putExtra("port", Integer.parseInt(editTextPort.getText().toString().trim()));
                 intent.putExtra("username", username);
                 startActivity(intent);
                 

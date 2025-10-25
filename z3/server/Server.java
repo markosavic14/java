@@ -2,6 +2,8 @@
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -13,11 +15,13 @@ public class Server {
     private ServerSocket serverSocket;
     private ArrayList<User> users;
     private ArrayList<String> activeUsers; // Track currently logged in users
+    private Map<String, PrintWriter> userConnections; // Map username to their PrintWriter for communication
     private boolean running;
 
     public Server() throws Exception {
         this.users = DataManager.loadUsers();
         this.activeUsers = new ArrayList<>(); // Initialize active users list
+        this.userConnections = new HashMap<>(); // Initialize user connections map
         
         // If no serialized data exists, import from text files
         if (this.users.isEmpty()) {
@@ -105,7 +109,7 @@ public class Server {
         }
     }
 
-    private String handleLogin(String loginData, Socket clientSocket) throws IOException {
+    private String handleLogin(String loginData, Socket clientSocket, PrintWriter out) throws IOException {
         if(authentication(loginData)){
             // Extract username from login data
             String username = loginData.split(":")[0];
@@ -118,15 +122,18 @@ public class Server {
                 }
             }
             
-            PrintWriter loginOut = new PrintWriter(clientSocket.getOutputStream(), true);
-            loginOut.println("AUTH_SUCCESS");
+            // Store the connection for this user
+            synchronized(userConnections) {
+                userConnections.put(username, out);
+                System.out.println("Stored connection for user: " + username);
+            }
+            
+            out.println("AUTH_SUCCESS");
             return username; // Return the username for tracking
         } else {
             // Failed authentication
-            PrintWriter loginOut = new PrintWriter(clientSocket.getOutputStream(), true);
-            loginOut.println("AUTH_FAILURE");
-            // Close connection after failed authentication
-            clientSocket.close();
+            out.println("AUTH_FAILURE");
+            // Don't close connection here - let it be handled by the caller
             return null;
         }
     }
@@ -134,6 +141,8 @@ public class Server {
     
     private void handleClient(Socket clientSocket) throws IOException {
         String activeUserUsername = null;
+        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+        
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
             String line;
             System.out.println("Reading data from client...");
@@ -141,33 +150,54 @@ public class Server {
             while ((line = in.readLine()) != null) {
                 System.out.println("Received from " + clientSocket.getInetAddress() + ": " + line);
                 
-
                 // Check if it's a registration attempt (format: REGISTER:username:password)
                 if(line.startsWith("REGISTER:")) {
                     // Extract the credentials part after "REGISTER:"
                     String credentials = line.substring(9); // Remove "REGISTER:" prefix
                     if(register_user(credentials)){
-                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                         out.println("REGISTER_SUCCESS");
                     } else {
-                        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                         out.println("REGISTER_FAILURE");
                     }
+                    // Close connection after registration attempt
+                    clientSocket.close();
+                    return;
+                    
                 } else if(line.startsWith("LOGIN:")) {
                     // Extract the credentials part after "LOGIN:"
                     String credentials = line.substring(6); // Remove "LOGIN:" prefix
-                    activeUserUsername = handleLogin(credentials, clientSocket);
+                    activeUserUsername = handleLogin(credentials, clientSocket, out);
+                    if (activeUserUsername == null) {
+                        // Login failed, close connection
+                        clientSocket.close();
+                        return;
+                    }
+                    // Login successful, continue to handle other commands
+                    
                 } else if(line.equals("GET_ACTIVE_USERS")) {
-                    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                     // Send the list of active users as a comma-separated string
                     String activeUsersList = String.join(",", activeUsers);
                     out.println("ACTIVE_USERS:" + activeUsersList);
+                    
+                } else if(line.startsWith("CONNECT_REQUEST:")) {
+                    // Handle connection request (format: CONNECT_REQUEST:targetUsername)
+                    String targetUsername = line.substring(16); // Remove "CONNECT_REQUEST:" prefix
+                    handleConnectionRequest(activeUserUsername, targetUsername);
+                    
+                } else if(line.startsWith("CONNECT_ACCEPT:")) {
+                    // Handle connection acceptance (format: CONNECT_ACCEPT:requesterUsername)
+                    String requesterUsername = line.substring(15); // Remove "CONNECT_ACCEPT:" prefix
+                    handleConnectionResponse(requesterUsername, activeUserUsername, true);
+                    
+                } else if(line.startsWith("CONNECT_DECLINE:")) {
+                    // Handle connection decline (format: CONNECT_DECLINE:requesterUsername)
+                    String requesterUsername = line.substring(16); // Remove "CONNECT_DECLINE:" prefix
+                    handleConnectionResponse(requesterUsername, activeUserUsername, false);
+                    
                 } else {
                     // Unknown command
-                    PrintWriter errorOut = new PrintWriter(clientSocket.getOutputStream(), true);
-                    errorOut.println("UNKNOWN_COMMAND");
-                    clientSocket.close();
-                    System.out.println("Client disconnected: " + clientSocket.getInetAddress());
+                    out.println("UNKNOWN_COMMAND");
+                    System.out.println("Unknown command from " + clientSocket.getInetAddress() + ": " + line);
                 }
             }
         } catch (IOException e) {
@@ -178,6 +208,10 @@ public class Server {
                 synchronized(activeUsers) {
                     activeUsers.remove(activeUserUsername);
                     System.out.println("User " + activeUserUsername + " removed from active users list");
+                }
+                synchronized(userConnections) {
+                    userConnections.remove(activeUserUsername);
+                    System.out.println("Removed connection for user: " + activeUserUsername);
                 }
             }
             try {
@@ -239,6 +273,49 @@ public class Server {
             System.out.println("User credentials saved to users.txt");
         } catch (IOException e) {
             System.err.println("Error saving user to file: " + e.getMessage());
+        }
+    }
+
+    private void handleConnectionRequest(String requesterUsername, String targetUsername) {
+        System.out.println("Connection request from " + requesterUsername + " to " + targetUsername);
+        
+        // Check if target user is online
+        synchronized(userConnections) {
+            PrintWriter targetConnection = userConnections.get(targetUsername);
+            if (targetConnection != null) {
+                // Send connection request to target user
+                targetConnection.println("CONNECTION_REQUEST:" + requesterUsername);
+                System.out.println("Sent connection request to " + targetUsername);
+            } else {
+                // Target user is not online, notify requester
+                PrintWriter requesterConnection = userConnections.get(requesterUsername);
+                if (requesterConnection != null) {
+                    requesterConnection.println("USER_OFFLINE:" + targetUsername);
+                }
+                System.out.println("Target user " + targetUsername + " is not online");
+            }
+        }
+    }
+
+    private void handleConnectionResponse(String requesterUsername, String responderUsername, boolean accepted) {
+        System.out.println("Connection response from " + responderUsername + " to " + requesterUsername + ": " + (accepted ? "ACCEPTED" : "DECLINED"));
+        
+        synchronized(userConnections) {
+            PrintWriter requesterConnection = userConnections.get(requesterUsername);
+            if (requesterConnection != null) {
+                if (accepted) {
+                    requesterConnection.println("CONNECTION_ACCEPTED:" + responderUsername);
+                    // Also notify the responder that connection is established
+                    PrintWriter responderConnection = userConnections.get(responderUsername);
+                    if (responderConnection != null) {
+                        responderConnection.println("CONNECTION_SUCCESS");
+                    }
+                } else {
+                    requesterConnection.println("CONNECTION_DECLINED:" + responderUsername);
+                }
+            } else {
+                System.out.println("Requester " + requesterUsername + " is no longer online");
+            }
         }
     }
 
