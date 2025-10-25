@@ -18,34 +18,44 @@
         android:textAlignment="center">
 
         <EditText
+            android:id="@+id/editTextServerIP"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/login_ip_servera" />
+            android:hint="@string/login_ip_servera"
+            android:inputType="text" />
 
         <EditText
+            android:id="@+id/editTextPort"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/login_port"/>
+            android:hint="@string/login_port"
+            android:inputType="number"/>
 
         <EditText
+            android:id="@+id/editTextUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Username" />
+            android:hint="Username"
+            android:inputType="text" />
 
         <EditText
+            android:id="@+id/editTextPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password" />
+            android:hint="Password"
+            android:inputType="textPassword" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
         <Button
+            android:id="@+id/buttonLogin"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/login_button"/>
         <Button
+            android:id="@+id/buttonRegister"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Register"/>
