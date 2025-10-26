@@ -231,6 +231,10 @@ public class Server {
                     // Handle play again request
                     handlePlayAgainRequest(activeUserUsername);
                     
+                } else if(line.equals("DECLINE_REMATCH")) {
+                    // Handle rematch decline
+                    handleDeclineRematch(activeUserUsername);
+                    
                 } else {
                     // Unknown command
                     out.println("UNKNOWN_COMMAND");
@@ -413,11 +417,9 @@ public class Server {
 
         // Check if game is over
         if (result.startsWith("GAME_OVER:") || result.startsWith("GAME_DRAW")) {
-            // Remove the game room and player mappings
-            gameRooms.remove(roomId);
-            playerToRoom.remove(gameRoom.getPlayer1());
-            playerToRoom.remove(gameRoom.getPlayer2());
-            System.out.println("Game " + roomId + " ended");
+            // Mark game as ended but keep room active for potential rematch
+            gameRoom.setGameEnded(true);
+            System.out.println("Game " + roomId + " ended, room kept active for potential rematch");
         }
     }
 
@@ -442,12 +444,37 @@ public class Server {
             opponentConnection.println("OPPONENT_LEFT:" + playerUsername);
         }
 
-        // Clean up the game room
-        gameRooms.remove(roomId);
-        playerToRoom.remove(gameRoom.getPlayer1());
-        playerToRoom.remove(gameRoom.getPlayer2());
+        // Clean up the game room since someone left
+        cleanupGameRoom(roomId);
         
         System.out.println("Player " + playerUsername + " left game " + roomId);
+    }
+
+    private void handleDeclineRematch(String playerUsername) {
+        String roomId = playerToRoom.get(playerUsername);
+        if (roomId == null) {
+            return; // Player is not in a game
+        }
+
+        GameRoom gameRoom = gameRooms.get(roomId);
+        if (gameRoom == null) {
+            return;
+        }
+
+        // Notify the other player that rematch was declined
+        String otherPlayerUsername = gameRoom.getPlayer1().equals(playerUsername) 
+                                   ? gameRoom.getPlayer2() 
+                                   : gameRoom.getPlayer1();
+        
+        PrintWriter otherPlayerConnection = userConnections.get(otherPlayerUsername);
+        if (otherPlayerConnection != null) {
+            otherPlayerConnection.println("REMATCH_DECLINED:" + playerUsername);
+        }
+
+        // Clean up the game room since rematch was declined
+        cleanupGameRoom(roomId);
+        
+        System.out.println("Player " + playerUsername + " declined rematch in room " + roomId);
     }
 
     private void handlePlayAgainRequest(String playerUsername) {
@@ -503,6 +530,17 @@ public class Server {
         }
     }
 
+    private void cleanupGameRoom(String roomId) {
+        // Remove the game room and player mappings
+        GameRoom gameRoom = gameRooms.get(roomId);
+        if (gameRoom != null) {
+            gameRooms.remove(roomId);
+            playerToRoom.remove(gameRoom.getPlayer1());
+            playerToRoom.remove(gameRoom.getPlayer2());
+            System.out.println("Game room " + roomId + " cleaned up");
+        }
+    }
+
     // Inner class for managing game rooms
     private static class GameRoom {
         private static final int ROWS = 6;
@@ -519,6 +557,7 @@ public class Server {
         private boolean gameOver;
         private boolean player1WantsRematch;
         private boolean player2WantsRematch;
+        private boolean gameEnded; // New field to track if game has ended but room still active
 
         public GameRoom(String roomId, String player1, String player2) {
             this.roomId = roomId;
@@ -529,6 +568,7 @@ public class Server {
             this.gameOver = false;
             this.player1WantsRematch = false;
             this.player2WantsRematch = false;
+            this.gameEnded = false;
             
             // Initialize empty board
             for (int row = 0; row < ROWS; row++) {
@@ -673,9 +713,18 @@ public class Server {
             
             // Reset game state
             this.gameOver = false;
+            this.gameEnded = false;
             this.currentPlayerUsername = player1Username; // Player 1 starts again
             this.player1WantsRematch = false;
             this.player2WantsRematch = false;
+        }
+
+        public void setGameEnded(boolean ended) {
+            this.gameEnded = ended;
+        }
+
+        public boolean isGameEnded() {
+            return gameEnded;
         }
     }
 
