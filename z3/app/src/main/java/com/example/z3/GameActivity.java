@@ -43,6 +43,7 @@ public class GameActivity extends AppCompatActivity {
     private TextView gameStatus;
     private Button resetButton;
     private Button forfeitButton;
+    private AlertDialog waitingDialog;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -423,6 +424,34 @@ public class GameActivity extends AppCompatActivity {
         } else if (message.startsWith("INVALID_MOVE:")) {
             String reason = message.substring(13);
             Toast.makeText(this, "Invalid move: " + reason, Toast.LENGTH_SHORT).show();
+        } else if (message.startsWith("NEW_GAME_START:")) {
+            // Parse: NEW_GAME_START:player1:player2:roomId:playerNumber
+            String[] parts = message.split(":");
+            if (parts.length >= 5) {
+                // Close waiting dialog if it exists
+                if (waitingDialog != null && waitingDialog.isShowing()) {
+                    waitingDialog.dismiss();
+                }
+                
+                // Reset the game state for new game
+                resetGameForNewMatch();
+                
+                // Update player roles if needed
+                String playerNumber = parts[4];
+                myPlayerNumber = playerNumber;
+                isMyTurn = playerNumber.equals("PLAYER1");
+                
+                Toast.makeText(this, "New game started!", Toast.LENGTH_SHORT).show();
+                updateGameStatus();
+            }
+        } else if (message.startsWith("OPPONENT_WANTS_REMATCH:")) {
+            String opponentName = message.substring(23);
+            if (waitingDialog != null && waitingDialog.isShowing()) {
+                waitingDialog.dismiss();
+            }
+            showRematchRequestDialog(opponentName);
+        } else if (message.equals("WAITING_FOR_OPPONENT_REMATCH")) {
+            // Keep showing the waiting dialog - already shown in requestPlayAgain()
         }
     }
 
@@ -436,7 +465,7 @@ public class GameActivity extends AppCompatActivity {
             builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    returnToUserList();
+                    requestPlayAgain();
                     dialog.dismiss();
                 }
             });
@@ -479,7 +508,7 @@ public class GameActivity extends AppCompatActivity {
             builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    returnToUserList();
+                    requestPlayAgain();
                     dialog.dismiss();
                 }
             });
@@ -528,6 +557,89 @@ public class GameActivity extends AppCompatActivity {
         finish();
     }
 
+    private void requestPlayAgain() {
+        if (isMultiplayer) {
+            ConnectionManager connectionManager = ConnectionManager.getInstance();
+            if (connectionManager.isConnected()) {
+                connectionManager.sendMessage("PLAY_AGAIN_REQUEST");
+                showWaitingForOpponentDialog();
+            } else {
+                Toast.makeText(this, "No connection to server", Toast.LENGTH_SHORT).show();
+                returnToUserList();
+            }
+        } else {
+            // For single player, just reset the game
+            resetGame();
+        }
+    }
+
+    private void showWaitingForOpponentDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Waiting for Opponent");
+        builder.setMessage("Waiting for your opponent to decide...");
+        builder.setNegativeButton("Return to Lobby", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                returnToUserList();
+                dialog.dismiss();
+            }
+        });
+        builder.setCancelable(false);
+        waitingDialog = builder.show();
+    }
+
+    private void resetGameForNewMatch() {
+        // Reset the game board
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                gameBoard[row][col] = EMPTY;
+                if (gameGrid[row][col] != null) {
+                    gameGrid[row][col].setImageResource(0); // Clear the image
+                    gameGrid[row][col].clearColorFilter();
+                }
+            }
+        }
+        
+        // Reset game state
+        currentPlayer = PLAYER1;
+        gameOver = false;
+        
+        // Reset multiplayer state
+        isMyTurn = myPlayerNumber.equals("PLAYER1");
+        
+        updateGameStatus();
+    }
+
+    private void showRematchRequestDialog(String opponentName) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Rematch Request");
+        builder.setMessage(opponentName + " wants to play another game. Do you want to play again?");
+        
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Accept rematch
+                ConnectionManager connectionManager = ConnectionManager.getInstance();
+                if (connectionManager.isConnected()) {
+                    connectionManager.sendMessage("PLAY_AGAIN_REQUEST");
+                }
+                dialog.dismiss();
+            }
+        });
+        
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Decline rematch - return to lobby
+                returnToUserList();
+                dialog.dismiss();
+            }
+        });
+        
+        builder.setCancelable(false);
+        builder.show();
+    }
+
     private void showGameOverDialog(String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Game Over!");
@@ -538,7 +650,7 @@ public class GameActivity extends AppCompatActivity {
             builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    returnToUserList();
+                    requestPlayAgain();
                     dialog.dismiss();
                 }
             });

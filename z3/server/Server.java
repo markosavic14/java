@@ -227,6 +227,10 @@ public class Server {
                     // Handle player leaving game
                     handleLeaveGame(activeUserUsername);
                     
+                } else if(line.equals("PLAY_AGAIN_REQUEST")) {
+                    // Handle play again request
+                    handlePlayAgainRequest(activeUserUsername);
+                    
                 } else {
                     // Unknown command
                     out.println("UNKNOWN_COMMAND");
@@ -446,6 +450,59 @@ public class Server {
         System.out.println("Player " + playerUsername + " left game " + roomId);
     }
 
+    private void handlePlayAgainRequest(String playerUsername) {
+        String roomId = playerToRoom.get(playerUsername);
+        if (roomId == null) {
+            return; // Player is not in a game
+        }
+
+        GameRoom gameRoom = gameRooms.get(roomId);
+        if (gameRoom == null) {
+            return;
+        }
+
+        // Check if this player wants to play again
+        boolean bothWantToPlayAgain = gameRoom.setPlayAgainRequest(playerUsername);
+        
+        if (bothWantToPlayAgain) {
+            // Both players want to play again, start a new game in the same room
+            gameRoom.resetGame();
+            
+            // Notify both players that a new game is starting
+            PrintWriter player1Connection = userConnections.get(gameRoom.getPlayer1());
+            PrintWriter player2Connection = userConnections.get(gameRoom.getPlayer2());
+            
+            String newGameMessage = "NEW_GAME_START:" + gameRoom.getPlayer1() + ":" + gameRoom.getPlayer2() + ":" + roomId;
+            
+            if (player1Connection != null) {
+                player1Connection.println(newGameMessage + ":PLAYER1");
+            }
+            if (player2Connection != null) {
+                player2Connection.println(newGameMessage + ":PLAYER2");
+            }
+            
+            System.out.println("New game started in room " + roomId + " between " + gameRoom.getPlayer1() + " and " + gameRoom.getPlayer2());
+        } else {
+            // Only one player wants to play again so far, notify the other player
+            String otherPlayerUsername = gameRoom.getPlayer1().equals(playerUsername) 
+                                       ? gameRoom.getPlayer2() 
+                                       : gameRoom.getPlayer1();
+            
+            PrintWriter otherPlayerConnection = userConnections.get(otherPlayerUsername);
+            if (otherPlayerConnection != null) {
+                otherPlayerConnection.println("OPPONENT_WANTS_REMATCH:" + playerUsername);
+            }
+            
+            // Notify the requesting player that we're waiting for opponent
+            PrintWriter playerConnection = userConnections.get(playerUsername);
+            if (playerConnection != null) {
+                playerConnection.println("WAITING_FOR_OPPONENT_REMATCH");
+            }
+            
+            System.out.println("Player " + playerUsername + " wants to play again, waiting for " + otherPlayerUsername);
+        }
+    }
+
     // Inner class for managing game rooms
     private static class GameRoom {
         private static final int ROWS = 6;
@@ -460,6 +517,8 @@ public class Server {
         private String currentPlayerUsername;
         private int[][] gameBoard;
         private boolean gameOver;
+        private boolean player1WantsRematch;
+        private boolean player2WantsRematch;
 
         public GameRoom(String roomId, String player1, String player2) {
             this.roomId = roomId;
@@ -468,6 +527,8 @@ public class Server {
             this.currentPlayerUsername = player1; // Player 1 starts
             this.gameBoard = new int[ROWS][COLS];
             this.gameOver = false;
+            this.player1WantsRematch = false;
+            this.player2WantsRematch = false;
             
             // Initialize empty board
             for (int row = 0; row < ROWS; row++) {
@@ -589,6 +650,32 @@ public class Server {
 
         public String getRoomId() {
             return roomId;
+        }
+
+        public boolean setPlayAgainRequest(String playerUsername) {
+            if (playerUsername.equals(player1Username)) {
+                player1WantsRematch = true;
+            } else if (playerUsername.equals(player2Username)) {
+                player2WantsRematch = true;
+            }
+            
+            // Return true if both players want to play again
+            return player1WantsRematch && player2WantsRematch;
+        }
+
+        public void resetGame() {
+            // Reset the game board
+            for (int row = 0; row < ROWS; row++) {
+                for (int col = 0; col < COLS; col++) {
+                    gameBoard[row][col] = EMPTY;
+                }
+            }
+            
+            // Reset game state
+            this.gameOver = false;
+            this.currentPlayerUsername = player1Username; // Player 1 starts again
+            this.player1WantsRematch = false;
+            this.player2WantsRematch = false;
         }
     }
 
