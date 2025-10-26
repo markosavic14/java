@@ -2,12 +2,15 @@ package com.example.z3;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -33,7 +36,7 @@ public class UserListActivity extends Activity {
     private Button logoutButton;
     private ExecutorService executorService;
     private Handler mainHandler;
-    private ArrayAdapter<String> userAdapter;
+    private UserStatusAdapter userAdapter;
     private List<String> activeUsers;
     private boolean isConnectedToServer = false;
 
@@ -64,7 +67,7 @@ public class UserListActivity extends Activity {
 
         // Initialize user list
         activeUsers = new ArrayList<>();
-        userAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, activeUsers);
+        userAdapter = new UserStatusAdapter(this, android.R.layout.simple_list_item_1, activeUsers);
         userListView.setAdapter(userAdapter);
 
         // Set click listeners
@@ -93,8 +96,18 @@ public class UserListActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String selectedUser = activeUsers.get(position);
-                if (!selectedUser.equals(currentUsername)) {
-                    sendConnectionRequest(selectedUser);
+                
+                // Check if user is in game
+                if (selectedUser.contains("(in_game)")) {
+                    Toast.makeText(UserListActivity.this, "This player is currently in a game", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                
+                // Remove any status indicators for comparison
+                String cleanUsername = selectedUser.replaceAll("\\(.*\\)", "").trim();
+                
+                if (!cleanUsername.equals(currentUsername)) {
+                    sendConnectionRequest(cleanUsername);
                 } else {
                     Toast.makeText(UserListActivity.this, "You cannot connect to yourself", Toast.LENGTH_SHORT).show();
                 }
@@ -304,5 +317,43 @@ public class UserListActivity extends Activity {
         loginIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(loginIntent);
         finish();
+    }
+}
+
+// Custom adapter to handle user status display
+class UserStatusAdapter extends ArrayAdapter<String> {
+    private Context context;
+    private List<String> users;
+
+    public UserStatusAdapter(Context context, int resource, List<String> users) {
+        super(context, resource, users);
+        this.context = context;
+        this.users = users;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        View view = super.getView(position, convertView, parent);
+        TextView textView = (TextView) view;
+        
+        String user = users.get(position);
+        if (user.contains("(in_game)")) {
+            // Show user as grayed out with status
+            textView.setTextColor(Color.GRAY);
+            textView.setText(user.replace("(in_game)", "- In Game"));
+        } else {
+            // Show user as normal (available)
+            textView.setTextColor(Color.BLACK);
+            textView.setText(user);
+        }
+        
+        return view;
+    }
+
+    @Override
+    public boolean isEnabled(int position) {
+        // Disable clicking on users who are in game
+        String user = users.get(position);
+        return !user.contains("(in_game)");
     }
 }

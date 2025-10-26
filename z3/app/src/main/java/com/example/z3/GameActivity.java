@@ -430,19 +430,33 @@ public class GameActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Game Over!");
         builder.setMessage(winner + " wins! 🎉");
-        builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                resetGame();
-                dialog.dismiss();
-            }
-        });
-        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
+        
+        if (isMultiplayer) {
+            // In multiplayer, only show "Return to Lobby" option
+            builder.setPositiveButton("Return to Lobby", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    returnToUserList();
+                    dialog.dismiss();
+                }
+            });
+        } else {
+            // In single player, show both options
+            builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    resetGame();
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+        }
+        
         builder.setCancelable(false);
         builder.show();
         
@@ -453,21 +467,53 @@ public class GameActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Game Over!");
         builder.setMessage("It's a draw! 🤝");
-        builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                resetGame();
-                dialog.dismiss();
-            }
-        });
-        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
+        
+        if (isMultiplayer) {
+            // In multiplayer, only show "Return to Lobby" option
+            builder.setPositiveButton("Return to Lobby", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    returnToUserList();
+                    dialog.dismiss();
+                }
+            });
+        } else {
+            // In single player, show both options
+            builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    resetGame();
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+        }
+        
         builder.setCancelable(false);
         builder.show();
+    }
+
+    private void returnToUserList() {
+        // Notify server that we're leaving the current game
+        if (isMultiplayer) {
+            ConnectionManager connectionManager = ConnectionManager.getInstance();
+            if (connectionManager.isConnected()) {
+                connectionManager.sendMessage("LEAVE_GAME");
+            }
+        }
+        
+        // Return to UserListActivity
+        Intent userListIntent = new Intent(GameActivity.this, UserListActivity.class);
+        userListIntent.putExtra("serverIP", getIntent().getStringExtra("serverIP"));
+        userListIntent.putExtra("port", getIntent().getIntExtra("port", 8800));
+        userListIntent.putExtra("username", getIntent().getStringExtra("username"));
+        startActivity(userListIntent);
+        finish();
     }
 
     private void showGameOverDialog(String message) {
@@ -492,21 +538,41 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void resetGame() {
-        // Reset game board
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                gameBoard[row][col] = EMPTY;
-                if (gameGrid[row][col] != null) {
-                    gameGrid[row][col].setColorFilter(getResources().getColor(R.color.gray));
+        if (isMultiplayer) {
+            // In multiplayer mode, return to user list instead of resetting locally
+            Toast.makeText(this, "Returning to user list to start a new game...", Toast.LENGTH_SHORT).show();
+            
+            // Notify server that we're leaving the current game
+            ConnectionManager connectionManager = ConnectionManager.getInstance();
+            if (connectionManager.isConnected()) {
+                connectionManager.sendMessage("LEAVE_GAME");
+            }
+            
+            // Return to UserListActivity
+            Intent userListIntent = new Intent(GameActivity.this, UserListActivity.class);
+            userListIntent.putExtra("serverIP", getIntent().getStringExtra("serverIP"));
+            userListIntent.putExtra("port", getIntent().getIntExtra("port", 8800));
+            userListIntent.putExtra("username", getIntent().getStringExtra("username"));
+            startActivity(userListIntent);
+            finish();
+        } else {
+            // Local game reset
+            for (int row = 0; row < ROWS; row++) {
+                for (int col = 0; col < COLS; col++) {
+                    gameBoard[row][col] = EMPTY;
+                    if (gameGrid[row][col] != null) {
+                        gameGrid[row][col].setColorFilter(getResources().getColor(R.color.gray));
+                    }
                 }
             }
+            
+            currentPlayer = PLAYER1;
+            gameOver = false;
+            isMyTurn = true; // Reset turn for local game
+            updateGameStatus();
+            
+            Toast.makeText(this, "Game reset! " + player1Name + " starts.", Toast.LENGTH_SHORT).show();
         }
-        
-        currentPlayer = PLAYER1;
-        gameOver = false;
-        updateGameStatus();
-        
-        Toast.makeText(this, "Game reset! " + player1Name + " starts.", Toast.LENGTH_SHORT).show();
     }
 
     private void forfeitGame() {
@@ -536,8 +602,24 @@ public class GameActivity extends AppCompatActivity {
                 
                 Toast.makeText(GameActivity.this, currentPlayerName + " forfeited the game!", Toast.LENGTH_LONG).show();
                 
-                // Show game over dialog
-                showGameOverDialog(winnerName + " wins by forfeit!");
+                if (isMultiplayer) {
+                    // Notify server about forfeit and leave game
+                    ConnectionManager connectionManager = ConnectionManager.getInstance();
+                    if (connectionManager.isConnected()) {
+                        connectionManager.sendMessage("LEAVE_GAME");
+                    }
+                    
+                    // Return to user list
+                    Intent userListIntent = new Intent(GameActivity.this, UserListActivity.class);
+                    userListIntent.putExtra("serverIP", getIntent().getStringExtra("serverIP"));
+                    userListIntent.putExtra("port", getIntent().getIntExtra("port", 8800));
+                    userListIntent.putExtra("username", getIntent().getStringExtra("username"));
+                    startActivity(userListIntent);
+                    finish();
+                } else {
+                    // Show game over dialog for local game
+                    showGameOverDialog(winnerName + " wins by forfeit!");
+                }
             }
         });
         

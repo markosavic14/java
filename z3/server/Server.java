@@ -181,9 +181,22 @@ public class Server {
                     // Login successful, continue to handle other commands
                     
                 } else if(line.equals("GET_ACTIVE_USERS")) {
-                    // Send the list of active users as a comma-separated string
-                    String activeUsersList = String.join(",", activeUsers);
-                    out.println("ACTIVE_USERS:" + activeUsersList);
+                    // Send the list of active users with their status (available/in_game)
+                    StringBuilder userListBuilder = new StringBuilder();
+                    synchronized(activeUsers) {
+                        for (int i = 0; i < activeUsers.size(); i++) {
+                            String username = activeUsers.get(i);
+                            boolean inGame = playerToRoom.containsKey(username);
+                            userListBuilder.append(username);
+                            if (inGame) {
+                                userListBuilder.append("(in_game)");
+                            }
+                            if (i < activeUsers.size() - 1) {
+                                userListBuilder.append(",");
+                            }
+                        }
+                    }
+                    out.println("ACTIVE_USERS:" + userListBuilder.toString());
                     
                 } else if(line.startsWith("CONNECT_REQUEST:")) {
                     // Handle connection request (format: CONNECT_REQUEST:targetUsername)
