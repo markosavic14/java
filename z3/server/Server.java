@@ -419,7 +419,8 @@ public class Server {
         if (result.startsWith("GAME_OVER:") || result.startsWith("GAME_DRAW")) {
             // Mark game as ended but keep room active for potential rematch
             gameRoom.setGameEnded(true);
-            System.out.println("Game " + roomId + " ended, room kept active for potential rematch");
+            System.out.println("DEBUG: Game " + roomId + " ended, room kept active for potential rematch");
+            System.out.println("DEBUG: Game result was: " + result);
         }
     }
 
@@ -478,18 +479,27 @@ public class Server {
     }
 
     private void handlePlayAgainRequest(String playerUsername) {
+        System.out.println("DEBUG: handlePlayAgainRequest called for player: " + playerUsername);
+        
         String roomId = playerToRoom.get(playerUsername);
+        System.out.println("DEBUG: Player " + playerUsername + " is in room: " + roomId);
+        
         if (roomId == null) {
+            System.out.println("DEBUG: No room found for player " + playerUsername);
             return; // Player is not in a game
         }
 
         GameRoom gameRoom = gameRooms.get(roomId);
         if (gameRoom == null) {
+            System.out.println("DEBUG: No game room found for roomId: " + roomId);
             return;
         }
 
+        System.out.println("DEBUG: Found game room " + roomId + " with players " + gameRoom.getPlayer1() + " and " + gameRoom.getPlayer2());
+
         // Check if this player wants to play again
         boolean bothWantToPlayAgain = gameRoom.setPlayAgainRequest(playerUsername);
+        System.out.println("DEBUG: Both want to play again: " + bothWantToPlayAgain);
         
         if (bothWantToPlayAgain) {
             // Both players want to play again, start a new game in the same room
@@ -693,14 +703,21 @@ public class Server {
         }
 
         public boolean setPlayAgainRequest(String playerUsername) {
+            System.out.println("DEBUG: setPlayAgainRequest called for " + playerUsername);
+            System.out.println("DEBUG: Before - player1WantsRematch: " + player1WantsRematch + ", player2WantsRematch: " + player2WantsRematch);
+            
             if (playerUsername.equals(player1Username)) {
                 player1WantsRematch = true;
             } else if (playerUsername.equals(player2Username)) {
                 player2WantsRematch = true;
             }
             
+            System.out.println("DEBUG: After - player1WantsRematch: " + player1WantsRematch + ", player2WantsRematch: " + player2WantsRematch);
+            
             // Return true if both players want to play again
-            return player1WantsRematch && player2WantsRematch;
+            boolean bothWantRematch = player1WantsRematch && player2WantsRematch;
+            System.out.println("DEBUG: Both want rematch: " + bothWantRematch);
+            return bothWantRematch;
         }
 
         public void resetGame() {
