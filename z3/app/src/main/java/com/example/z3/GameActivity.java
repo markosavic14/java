@@ -45,6 +45,7 @@ public class GameActivity extends AppCompatActivity {
     private Button forfeitButton;
     private AlertDialog waitingDialog;
     private AlertDialog rematchDialog;
+    private AlertDialog gameOverDialog;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -440,6 +441,12 @@ public class GameActivity extends AppCompatActivity {
                     rematchDialog = null;
                 }
                 
+                // Close game over dialog if it exists
+                if (gameOverDialog != null && gameOverDialog.isShowing()) {
+                    gameOverDialog.dismiss();
+                    gameOverDialog = null;
+                }
+                
                 // FIRST: Reset the game state completely
                 resetGameForNewMatch();
                 
@@ -507,7 +514,7 @@ public class GameActivity extends AppCompatActivity {
         }
         
         builder.setCancelable(false);
-        builder.show();
+        gameOverDialog = builder.show();
         
         updateGameStatus();
     }
@@ -550,7 +557,7 @@ public class GameActivity extends AppCompatActivity {
         }
         
         builder.setCancelable(false);
-        builder.show();
+        gameOverDialog = builder.show();
     }
 
     private void returnToUserList() {
@@ -710,7 +717,7 @@ public class GameActivity extends AppCompatActivity {
         }
         
         builder.setCancelable(false);
-        builder.show();
+        gameOverDialog = builder.show();
     }
 
     private void resetGame() {
