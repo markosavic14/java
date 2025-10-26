@@ -20,6 +20,7 @@
             android:padding="@dimen/appbar_padding"
             android:layout_gravity="center"
             android:text="Z4 - MusicLibraryDB"
+            android:textColor="@color/black"
             android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title" />
 
         <com.google.android.material.tabs.TabLayout
@@ -30,22 +31,22 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Songs"/>
+                android:text="@string/songs"/>
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Singers"/>
+                android:text="@string/singers"/>
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Genres"/>
+                android:text="@string/genres"/>
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Playlists"/>
+                android:text="@string/playlists"/>
 
 
         </com.google.android.material.tabs.TabLayout>
