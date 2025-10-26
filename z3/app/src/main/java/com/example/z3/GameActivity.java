@@ -101,6 +101,18 @@ public class GameActivity extends AppCompatActivity {
         // Set up multiplayer communication if needed
         if (isMultiplayer) {
             setupMultiplayerConnection();
+        } else {
+            // Notify server that we're starting a single-player game
+            notifyServerSinglePlayerStart();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Notify server that single-player game has ended
+        if (!isMultiplayer) {
+            notifyServerSinglePlayerEnd();
         }
     }
 
@@ -834,5 +846,19 @@ public class GameActivity extends AppCompatActivity {
             }
         });
         builder.show();
+    }
+
+    private void notifyServerSinglePlayerStart() {
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        if (connectionManager.isConnected()) {
+            connectionManager.sendMessage("START_SINGLE_PLAYER");
+        }
+    }
+
+    private void notifyServerSinglePlayerEnd() {
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        if (connectionManager.isConnected()) {
+            connectionManager.sendMessage("END_SINGLE_PLAYER");
+        }
     }
 }

@@ -19,6 +19,7 @@ public class Server {
     private Map<String, PrintWriter> userConnections; // Map username to their PrintWriter for communication
     private Map<String, GameRoom> gameRooms; // Map game room ID to game room
     private Map<String, String> playerToRoom; // Map player username to their current room ID
+    private Map<String, Boolean> singlePlayerGames; // Track users in single-player games
     private int gameRoomCounter = 1; // Counter for generating unique room IDs
     private boolean running;
 
@@ -28,6 +29,7 @@ public class Server {
         this.userConnections = new HashMap<>(); // Initialize user connections map
         this.gameRooms = new ConcurrentHashMap<>(); // Initialize game rooms map
         this.playerToRoom = new ConcurrentHashMap<>(); // Initialize player to room map
+        this.singlePlayerGames = new ConcurrentHashMap<>(); // Initialize single-player games map
         
         // If no serialized data exists, import from text files
         if (this.users.isEmpty()) {
@@ -186,9 +188,10 @@ public class Server {
                     synchronized(activeUsers) {
                         for (int i = 0; i < activeUsers.size(); i++) {
                             String username = activeUsers.get(i);
-                            boolean inGame = playerToRoom.containsKey(username);
+                            boolean inMultiplayerGame = playerToRoom.containsKey(username);
+                            boolean inSinglePlayerGame = singlePlayerGames.containsKey(username);
                             userListBuilder.append(username);
-                            if (inGame) {
+                            if (inMultiplayerGame || inSinglePlayerGame) {
                                 userListBuilder.append("(in_game)");
                             }
                             if (i < activeUsers.size() - 1) {
@@ -235,6 +238,16 @@ public class Server {
                     // Handle rematch decline
                     handleDeclineRematch(activeUserUsername);
                     
+                } else if(line.equals("START_SINGLE_PLAYER")) {
+                    // Handle single-player game start
+                    singlePlayerGames.put(activeUserUsername, true);
+                    System.out.println(activeUserUsername + " started a single-player game");
+                    
+                } else if(line.equals("END_SINGLE_PLAYER")) {
+                    // Handle single-player game end
+                    singlePlayerGames.remove(activeUserUsername);
+                    System.out.println(activeUserUsername + " ended a single-player game");
+                    
                 } else {
                     // Unknown command
                     out.println("UNKNOWN_COMMAND");
@@ -253,6 +266,11 @@ public class Server {
                 synchronized(userConnections) {
                     userConnections.remove(activeUserUsername);
                     System.out.println("Removed connection for user: " + activeUserUsername);
+                }
+                // Remove from single-player games if they were in one
+                if (singlePlayerGames.containsKey(activeUserUsername)) {
+                    singlePlayerGames.remove(activeUserUsername);
+                    System.out.println("Removed " + activeUserUsername + " from single-player game");
                 }
             }
             try {
