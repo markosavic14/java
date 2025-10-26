@@ -432,12 +432,18 @@ public class GameActivity extends AppCompatActivity {
         builder.setMessage(winner + " wins! 🎉");
         
         if (isMultiplayer) {
-            // In multiplayer, only show "Return to Lobby" option
-            builder.setPositiveButton("Return to Lobby", new DialogInterface.OnClickListener() {
+            // In multiplayer, show both "Play Another Game" and "Return to Lobby" options
+            builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     returnToUserList();
                     dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit Game", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
                 }
             });
         } else {
@@ -469,12 +475,18 @@ public class GameActivity extends AppCompatActivity {
         builder.setMessage("It's a draw! 🤝");
         
         if (isMultiplayer) {
-            // In multiplayer, only show "Return to Lobby" option
-            builder.setPositiveButton("Return to Lobby", new DialogInterface.OnClickListener() {
+            // In multiplayer, show both "Play Another Game" and "Exit Game" options
+            builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     returnToUserList();
                     dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit Game", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
                 }
             });
         } else {
@@ -520,19 +532,39 @@ public class GameActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Game Over!");
         builder.setMessage(message);
-        builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                resetGame();
-                dialog.dismiss();
-            }
-        });
-        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
+        
+        if (isMultiplayer) {
+            // In multiplayer, show both "Play Another Game" and "Exit Game" options
+            builder.setPositiveButton("Play Another Game", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    returnToUserList();
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit Game", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+        } else {
+            // In single player, show both options
+            builder.setPositiveButton("Play Again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    resetGame();
+                    dialog.dismiss();
+                }
+            });
+            builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+        }
+        
         builder.setCancelable(false);
         builder.show();
     }
