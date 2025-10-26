@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 
 import com.example.z4.ui.main.SectionsPagerAdapter;
 import com.example.z4.databinding.ActivityMainBinding;
@@ -33,6 +34,16 @@ public class MainActivity extends AppCompatActivity {
         TabLayout tabs = binding.tabs;
         tabs.setupWithViewPager(viewPager);
         FloatingActionButton fab = binding.fab;
+
+        // Set up search button click listener
+        ImageButton searchButton = binding.searchButton;
+        searchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Search functionality to be implemented", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
