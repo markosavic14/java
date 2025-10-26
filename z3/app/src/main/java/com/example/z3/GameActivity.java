@@ -44,6 +44,7 @@ public class GameActivity extends AppCompatActivity {
     private Button resetButton;
     private Button forfeitButton;
     private AlertDialog waitingDialog;
+    private AlertDialog rematchDialog;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -433,13 +434,19 @@ public class GameActivity extends AppCompatActivity {
                     waitingDialog.dismiss();
                 }
                 
-                // Reset the game state for new game
-                resetGameForNewMatch();
+                // Close rematch dialog if it exists
+                if (rematchDialog != null && rematchDialog.isShowing()) {
+                    rematchDialog.dismiss();
+                    rematchDialog = null;
+                }
                 
-                // Update player roles if needed
+                // Update player roles first
                 String playerNumber = parts[4];
                 myPlayerNumber = playerNumber;
                 isMyTurn = playerNumber.equals("PLAYER1");
+                
+                // Now reset the game state for new game with correct turn info
+                resetGameForNewMatch();
                 
                 Toast.makeText(this, "New game started!", Toast.LENGTH_SHORT).show();
                 updateGameStatus();
@@ -452,6 +459,13 @@ public class GameActivity extends AppCompatActivity {
             showRematchRequestDialog(opponentName);
         } else if (message.equals("WAITING_FOR_OPPONENT_REMATCH")) {
             // Keep showing the waiting dialog - already shown in requestPlayAgain()
+        } else if (message.startsWith("REMATCH_DECLINED:")) {
+            String decliningPlayer = message.substring(17);
+            if (waitingDialog != null && waitingDialog.isShowing()) {
+                waitingDialog.dismiss();
+            }
+            Toast.makeText(this, decliningPlayer + " declined the rematch", Toast.LENGTH_SHORT).show();
+            returnToUserList();
         }
     }
 
@@ -594,50 +608,70 @@ public class GameActivity extends AppCompatActivity {
             for (int col = 0; col < COLS; col++) {
                 gameBoard[row][col] = EMPTY;
                 if (gameGrid[row][col] != null) {
-                    gameGrid[row][col].setImageResource(0); // Clear the image
-                    gameGrid[row][col].clearColorFilter();
+                    // Set back to initial empty state (gray color filter)
+                    gameGrid[row][col].setColorFilter(getResources().getColor(R.color.gray));
                 }
             }
         }
         
         // Reset game state
-        currentPlayer = PLAYER1;
         gameOver = false;
         
-        // Reset multiplayer state
-        isMyTurn = myPlayerNumber.equals("PLAYER1");
+        // For single player games, reset to player 1
+        // For multiplayer games, isMyTurn is already set correctly
+        if (!isMultiplayer) {
+            currentPlayer = PLAYER1;
+        }
+        
+        // Enable all column buttons
+        for (Button button : columnButtons) {
+            if (button != null) {
+                button.setEnabled(true);
+            }
+        }
         
         updateGameStatus();
     }
 
     private void showRematchRequestDialog(String opponentName) {
+        // Prevent duplicate dialogs
+        if (rematchDialog != null && rematchDialog.isShowing()) {
+            return;
+        }
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Rematch Request");
-        builder.setMessage(opponentName + " wants to play another game. Do you want to play again?");
+        builder.setMessage(opponentName + " wants to play another game. Do you accept?");
         
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Yes, Play Again", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // Accept rematch
+                // Send our play again request - this will trigger the server to start new game
                 ConnectionManager connectionManager = ConnectionManager.getInstance();
                 if (connectionManager.isConnected()) {
                     connectionManager.sendMessage("PLAY_AGAIN_REQUEST");
                 }
+                rematchDialog = null;
                 dialog.dismiss();
             }
         });
         
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("No, Return to Lobby", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // Decline rematch - return to lobby
+                // Send decline message to server
+                ConnectionManager connectionManager = ConnectionManager.getInstance();
+                if (connectionManager.isConnected()) {
+                    connectionManager.sendMessage("DECLINE_REMATCH");
+                }
+                rematchDialog = null;
                 returnToUserList();
                 dialog.dismiss();
             }
         });
         
         builder.setCancelable(false);
-        builder.show();
+        rematchDialog = builder.show();
     }
 
     private void showGameOverDialog(String message) {
