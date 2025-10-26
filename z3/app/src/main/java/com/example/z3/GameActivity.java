@@ -440,13 +440,13 @@ public class GameActivity extends AppCompatActivity {
                     rematchDialog = null;
                 }
                 
-                // Update player roles first
+                // FIRST: Reset the game state completely
+                resetGameForNewMatch();
+                
+                // THEN: Update player roles and turn info
                 String playerNumber = parts[4];
                 myPlayerNumber = playerNumber;
                 isMyTurn = playerNumber.equals("PLAYER1");
-                
-                // Now reset the game state for new game with correct turn info
-                resetGameForNewMatch();
                 
                 Toast.makeText(this, "New game started!", Toast.LENGTH_SHORT).show();
                 updateGameStatus();
@@ -629,8 +629,6 @@ public class GameActivity extends AppCompatActivity {
                 button.setEnabled(true);
             }
         }
-        
-        updateGameStatus();
     }
 
     private void showRematchRequestDialog(String opponentName) {
