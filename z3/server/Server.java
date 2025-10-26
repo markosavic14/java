@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -16,12 +17,17 @@ public class Server {
     private ArrayList<User> users;
     private ArrayList<String> activeUsers; // Track currently logged in users
     private Map<String, PrintWriter> userConnections; // Map username to their PrintWriter for communication
+    private Map<String, GameRoom> gameRooms; // Map game room ID to game room
+    private Map<String, String> playerToRoom; // Map player username to their current room ID
+    private int gameRoomCounter = 1; // Counter for generating unique room IDs
     private boolean running;
 
     public Server() throws Exception {
         this.users = DataManager.loadUsers();
         this.activeUsers = new ArrayList<>(); // Initialize active users list
         this.userConnections = new HashMap<>(); // Initialize user connections map
+        this.gameRooms = new ConcurrentHashMap<>(); // Initialize game rooms map
+        this.playerToRoom = new ConcurrentHashMap<>(); // Initialize player to room map
         
         // If no serialized data exists, import from text files
         if (this.users.isEmpty()) {
@@ -194,6 +200,20 @@ public class Server {
                     String requesterUsername = line.substring(16); // Remove "CONNECT_DECLINE:" prefix
                     handleConnectionResponse(requesterUsername, activeUserUsername, false);
                     
+                } else if(line.startsWith("MAKE_MOVE:")) {
+                    // Handle game move (format: MAKE_MOVE:column)
+                    String columnStr = line.substring(10); // Remove "MAKE_MOVE:" prefix
+                    try {
+                        int column = Integer.parseInt(columnStr);
+                        handleGameMove(activeUserUsername, column);
+                    } catch (NumberFormatException e) {
+                        out.println("INVALID_MOVE");
+                    }
+                    
+                } else if(line.equals("LEAVE_GAME")) {
+                    // Handle player leaving game
+                    handleLeaveGame(activeUserUsername);
+                    
                 } else {
                     // Unknown command
                     out.println("UNKNOWN_COMMAND");
@@ -304,12 +324,21 @@ public class Server {
             PrintWriter requesterConnection = userConnections.get(requesterUsername);
             if (requesterConnection != null) {
                 if (accepted) {
-                    requesterConnection.println("CONNECTION_ACCEPTED:" + responderUsername);
-                    // Also notify the responder that connection is established
+                    // Create a new game room for these two players
+                    String roomId = "room_" + gameRoomCounter++;
+                    GameRoom gameRoom = new GameRoom(roomId, requesterUsername, responderUsername);
+                    gameRooms.put(roomId, gameRoom);
+                    playerToRoom.put(requesterUsername, roomId);
+                    playerToRoom.put(responderUsername, roomId);
+                    
+                    // Notify both players about the game start
+                    requesterConnection.println("GAME_START:" + responderUsername + ":" + roomId + ":PLAYER1");
                     PrintWriter responderConnection = userConnections.get(responderUsername);
                     if (responderConnection != null) {
-                        responderConnection.println("CONNECTION_SUCCESS");
+                        responderConnection.println("GAME_START:" + requesterUsername + ":" + roomId + ":PLAYER2");
                     }
+                    
+                    System.out.println("Created game room " + roomId + " for " + requesterUsername + " vs " + responderUsername);
                 } else {
                     requesterConnection.println("CONNECTION_DECLINED:" + responderUsername);
                 }
@@ -331,6 +360,222 @@ public class Server {
         if (serverSocket != null && !serverSocket.isClosed()) {
             serverSocket.close();
             System.out.println("Server stopped.");
+        }
+    }
+
+    private void handleGameMove(String playerUsername, int column) {
+        String roomId = playerToRoom.get(playerUsername);
+        if (roomId == null) {
+            // Player is not in a game
+            PrintWriter playerConnection = userConnections.get(playerUsername);
+            if (playerConnection != null) {
+                playerConnection.println("NOT_IN_GAME");
+            }
+            return;
+        }
+
+        GameRoom gameRoom = gameRooms.get(roomId);
+        if (gameRoom == null) {
+            System.err.println("Game room " + roomId + " not found");
+            return;
+        }
+
+        // Process the move
+        String result = gameRoom.makeMove(playerUsername, column);
+        
+        // Send the result to both players
+        PrintWriter player1Connection = userConnections.get(gameRoom.getPlayer1());
+        PrintWriter player2Connection = userConnections.get(gameRoom.getPlayer2());
+        
+        if (player1Connection != null) {
+            player1Connection.println(result);
+        }
+        if (player2Connection != null) {
+            player2Connection.println(result);
+        }
+
+        // Check if game is over
+        if (result.startsWith("GAME_OVER:") || result.startsWith("GAME_DRAW")) {
+            // Remove the game room and player mappings
+            gameRooms.remove(roomId);
+            playerToRoom.remove(gameRoom.getPlayer1());
+            playerToRoom.remove(gameRoom.getPlayer2());
+            System.out.println("Game " + roomId + " ended");
+        }
+    }
+
+    private void handleLeaveGame(String playerUsername) {
+        String roomId = playerToRoom.get(playerUsername);
+        if (roomId == null) {
+            return; // Player is not in a game
+        }
+
+        GameRoom gameRoom = gameRooms.get(roomId);
+        if (gameRoom == null) {
+            return;
+        }
+
+        // Notify the other player that opponent left
+        String opponentUsername = gameRoom.getPlayer1().equals(playerUsername) 
+                                ? gameRoom.getPlayer2() 
+                                : gameRoom.getPlayer1();
+        
+        PrintWriter opponentConnection = userConnections.get(opponentUsername);
+        if (opponentConnection != null) {
+            opponentConnection.println("OPPONENT_LEFT:" + playerUsername);
+        }
+
+        // Clean up the game room
+        gameRooms.remove(roomId);
+        playerToRoom.remove(gameRoom.getPlayer1());
+        playerToRoom.remove(gameRoom.getPlayer2());
+        
+        System.out.println("Player " + playerUsername + " left game " + roomId);
+    }
+
+    // Inner class for managing game rooms
+    private static class GameRoom {
+        private static final int ROWS = 6;
+        private static final int COLS = 7;
+        private static final int EMPTY = 0;
+        private static final int PLAYER1 = 1;
+        private static final int PLAYER2 = 2;
+
+        private String roomId;
+        private String player1Username;
+        private String player2Username;
+        private String currentPlayerUsername;
+        private int[][] gameBoard;
+        private boolean gameOver;
+
+        public GameRoom(String roomId, String player1, String player2) {
+            this.roomId = roomId;
+            this.player1Username = player1;
+            this.player2Username = player2;
+            this.currentPlayerUsername = player1; // Player 1 starts
+            this.gameBoard = new int[ROWS][COLS];
+            this.gameOver = false;
+            
+            // Initialize empty board
+            for (int row = 0; row < ROWS; row++) {
+                for (int col = 0; col < COLS; col++) {
+                    gameBoard[row][col] = EMPTY;
+                }
+            }
+        }
+
+        public String makeMove(String playerUsername, int column) {
+            if (gameOver) {
+                return "GAME_ALREADY_OVER";
+            }
+
+            // Check if it's the player's turn
+            if (!playerUsername.equals(currentPlayerUsername)) {
+                return "NOT_YOUR_TURN";
+            }
+
+            // Validate column
+            if (column < 0 || column >= COLS || gameBoard[0][column] != EMPTY) {
+                return "INVALID_MOVE:Column " + column + " is invalid or full";
+            }
+
+            // Find the lowest empty row in the column
+            int row = -1;
+            for (int r = ROWS - 1; r >= 0; r--) {
+                if (gameBoard[r][column] == EMPTY) {
+                    row = r;
+                    break;
+                }
+            }
+
+            if (row == -1) {
+                return "INVALID_MOVE:Column is full";
+            }
+
+            // Make the move
+            int playerNumber = playerUsername.equals(player1Username) ? PLAYER1 : PLAYER2;
+            gameBoard[row][column] = playerNumber;
+
+            // Check for win
+            if (checkWin(row, column, playerNumber)) {
+                gameOver = true;
+                return "GAME_OVER:WINNER:" + playerUsername + ":MOVE:" + row + "," + column;
+            }
+
+            // Check for draw
+            if (isBoardFull()) {
+                gameOver = true;
+                return "GAME_DRAW:MOVE:" + row + "," + column;
+            }
+
+            // Switch turns
+            currentPlayerUsername = playerUsername.equals(player1Username) ? player2Username : player1Username;
+
+            // Return the move result
+            return "MOVE_SUCCESS:" + playerUsername + ":" + row + "," + column + ":NEXT:" + currentPlayerUsername;
+        }
+
+        private boolean checkWin(int row, int col, int player) {
+            // Check horizontal
+            if (checkDirection(row, col, 0, 1, player) + checkDirection(row, col, 0, -1, player) + 1 >= 4) {
+                return true;
+            }
+            
+            // Check vertical
+            if (checkDirection(row, col, 1, 0, player) + checkDirection(row, col, -1, 0, player) + 1 >= 4) {
+                return true;
+            }
+            
+            // Check diagonal (top-left to bottom-right)
+            if (checkDirection(row, col, 1, 1, player) + checkDirection(row, col, -1, -1, player) + 1 >= 4) {
+                return true;
+            }
+            
+            // Check diagonal (top-right to bottom-left)
+            if (checkDirection(row, col, 1, -1, player) + checkDirection(row, col, -1, 1, player) + 1 >= 4) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        private int checkDirection(int row, int col, int deltaRow, int deltaCol, int player) {
+            int count = 0;
+            int r = row + deltaRow;
+            int c = col + deltaCol;
+            
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && gameBoard[r][c] == player) {
+                count++;
+                r += deltaRow;
+                c += deltaCol;
+            }
+            
+            return count;
+        }
+
+        private boolean isBoardFull() {
+            for (int col = 0; col < COLS; col++) {
+                if (gameBoard[0][col] == EMPTY) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public String getPlayer1() {
+            return player1Username;
+        }
+
+        public String getPlayer2() {
+            return player2Username;
+        }
+
+        public String getCurrentPlayer() {
+            return currentPlayerUsername;
+        }
+
+        public String getRoomId() {
+            return roomId;
         }
     }
 

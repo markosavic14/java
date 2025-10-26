@@ -177,6 +177,18 @@ public class UserListActivity extends Activity {
             // Navigate to game
             navigateToGame(accepterUsername);
             
+        } else if (message.startsWith("GAME_START:")) {
+            // Handle multiplayer game start: GAME_START:opponent:roomId:playerNumber
+            String[] parts = message.split(":");
+            if (parts.length >= 4) {
+                String opponent = parts[1];
+                String roomId = parts[2];
+                String playerNumber = parts[3];
+                
+                Toast.makeText(this, "Game starting with " + opponent + "!", Toast.LENGTH_SHORT).show();
+                navigateToMultiplayerGame(opponent, roomId, playerNumber);
+            }
+            
         } else if (message.startsWith("CONNECTION_DECLINED:")) {
             // Handle connection decline
             String declinerUsername = message.substring(20); // Remove "CONNECTION_DECLINED:" prefix
@@ -249,6 +261,18 @@ public class UserListActivity extends Activity {
         gameIntent.putExtra("port", port);
         gameIntent.putExtra("username", currentUsername);
         gameIntent.putExtra("opponent", opponentUsername);
+        startActivity(gameIntent);
+        finish();
+    }
+
+    private void navigateToMultiplayerGame(String opponentUsername, String roomId, String playerNumber) {
+        Intent gameIntent = new Intent(UserListActivity.this, GameActivity.class);
+        gameIntent.putExtra("serverIP", serverIP);
+        gameIntent.putExtra("port", port);
+        gameIntent.putExtra("username", currentUsername);
+        gameIntent.putExtra("opponent", opponentUsername);
+        gameIntent.putExtra("gameStart", "GAME_START:" + opponentUsername + ":" + roomId + ":" + playerNumber);
+        gameIntent.putExtra("isMultiplayer", true);
         startActivity(gameIntent);
         finish();
     }

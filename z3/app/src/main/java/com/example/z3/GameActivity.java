@@ -31,6 +31,11 @@ public class GameActivity extends AppCompatActivity {
     private boolean gameOver = false;
     private String player1Name = "Player 1";
     private String player2Name = "Player 2";
+    private boolean isMultiplayer = false;
+    private boolean isMyTurn = true;
+    private String myPlayerNumber = "PLAYER1"; // PLAYER1 or PLAYER2
+    private String opponentName = "";
+    private String gameRoomId = "";
     
     // UI elements
     private Button[] columnButtons = new Button[COLS];
@@ -60,10 +65,40 @@ public class GameActivity extends AppCompatActivity {
         }
         if (opponent != null) {
             player2Name = opponent;
+            isMultiplayer = true;
+            opponentName = opponent;
+        }
+
+        // Check if this is a multiplayer game start
+        String gameStart = intent.getStringExtra("gameStart");
+        if (gameStart != null && gameStart.startsWith("GAME_START:")) {
+            // Parse: GAME_START:opponent:roomId:playerNumber
+            String[] parts = gameStart.split(":");
+            if (parts.length >= 4) {
+                opponentName = parts[1];
+                gameRoomId = parts[2];
+                myPlayerNumber = parts[3];
+                isMultiplayer = true;
+                
+                if (myPlayerNumber.equals("PLAYER1")) {
+                    player1Name = username;
+                    player2Name = opponentName;
+                    isMyTurn = true;
+                } else {
+                    player1Name = opponentName;
+                    player2Name = username;
+                    isMyTurn = false;
+                }
+            }
         }
 
         initializeUI();
         initializeGame();
+        
+        // Set up multiplayer communication if needed
+        if (isMultiplayer) {
+            setupMultiplayerConnection();
+        }
     }
 
     private void initializeUI() {
@@ -141,10 +176,35 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void makeMove(int col) {
-        if (gameOver || !isValidMove(col)) {
+        if (gameOver) {
+            return;
+        }
+        
+        // Check if it's multiplayer and if it's the player's turn
+        if (isMultiplayer && !isMyTurn) {
+            Toast.makeText(this, "It's not your turn!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (!isValidMove(col)) {
             return;
         }
 
+        if (isMultiplayer) {
+            // Send move to server
+            ConnectionManager connectionManager = ConnectionManager.getInstance();
+            if (connectionManager.isConnected()) {
+                connectionManager.sendMessage("MAKE_MOVE:" + col);
+            } else {
+                Toast.makeText(this, "Connection lost!", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            // Local game logic
+            processMove(col, currentPlayer);
+        }
+    }
+    
+    private void processMove(int col, int player) {
         // Find the lowest empty row in the selected column
         int row = getLowestEmptyRow(col);
         if (row == -1) {
@@ -153,20 +213,22 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // Place the piece
-        gameBoard[row][col] = currentPlayer;
-        updateGamePiece(row, col, currentPlayer);
+        gameBoard[row][col] = player;
+        updateGamePiece(row, col, player);
 
         // Check for win or draw
         if (checkWin(row, col)) {
             gameOver = true;
-            String winner = (currentPlayer == PLAYER1) ? player1Name : player2Name;
+            String winner = (player == PLAYER1) ? player1Name : player2Name;
             showWinDialog(winner);
         } else if (isBoardFull()) {
             gameOver = true;
             showDrawDialog();
         } else {
-            // Switch players
-            currentPlayer = (currentPlayer == PLAYER1) ? PLAYER2 : PLAYER1;
+            // Switch players (for local game)
+            if (!isMultiplayer) {
+                currentPlayer = (currentPlayer == PLAYER1) ? PLAYER2 : PLAYER1;
+            }
             updateGameStatus();
         }
     }
@@ -242,9 +304,125 @@ public class GameActivity extends AppCompatActivity {
 
     private void updateGameStatus() {
         if (gameStatus != null) {
-            String currentPlayerName = (currentPlayer == PLAYER1) ? player1Name : player2Name;
-            String status = currentPlayerName + "'s turn";
+            String status;
+            if (isMultiplayer) {
+                if (isMyTurn) {
+                    status = "Your turn";
+                } else {
+                    status = opponentName + "'s turn";
+                }
+            } else {
+                String currentPlayerName = (currentPlayer == PLAYER1) ? player1Name : player2Name;
+                status = currentPlayerName + "'s turn";
+            }
             gameStatus.setText(status);
+        }
+    }
+
+    private void setupMultiplayerConnection() {
+        ConnectionManager connectionManager = ConnectionManager.getInstance();
+        
+        if (connectionManager.isConnected()) {
+            connectionManager.setConnectionListener(new ConnectionManager.ConnectionListener() {
+                @Override
+                public void onMessageReceived(String message) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleServerMessage(message);
+                        }
+                    });
+                }
+                
+                @Override
+                public void onConnectionLost() {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(GameActivity.this, "Lost connection to server", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                
+                @Override
+                public void onConnectionEstablished() {
+                    // Connection restored
+                }
+            });
+        }
+    }
+
+    private void handleServerMessage(String message) {
+        if (message.startsWith("MOVE_SUCCESS:")) {
+            // Parse: MOVE_SUCCESS:playerName:row,col:NEXT:nextPlayerName
+            String[] parts = message.split(":");
+            if (parts.length >= 5) {
+                String playerName = parts[1];
+                String[] coords = parts[2].split(",");
+                String nextPlayer = parts[4];
+                
+                int row = Integer.parseInt(coords[0]);
+                int col = Integer.parseInt(coords[1]);
+                
+                // Determine which player made the move
+                int player = playerName.equals(player1Name) ? PLAYER1 : PLAYER2;
+                
+                // Update the board
+                gameBoard[row][col] = player;
+                updateGamePiece(row, col, player);
+                
+                // Update turn
+                isMyTurn = nextPlayer.equals(player1Name) && myPlayerNumber.equals("PLAYER1") ||
+                          nextPlayer.equals(player2Name) && myPlayerNumber.equals("PLAYER2");
+                
+                updateGameStatus();
+            }
+        } else if (message.startsWith("GAME_OVER:WINNER:")) {
+            // Parse: GAME_OVER:WINNER:playerName:MOVE:row,col
+            String[] parts = message.split(":");
+            if (parts.length >= 4) {
+                String winner = parts[2];
+                String[] coords = parts[4].split(",");
+                
+                int row = Integer.parseInt(coords[0]);
+                int col = Integer.parseInt(coords[1]);
+                
+                // Update the board with the winning move
+                int player = winner.equals(player1Name) ? PLAYER1 : PLAYER2;
+                gameBoard[row][col] = player;
+                updateGamePiece(row, col, player);
+                
+                gameOver = true;
+                showWinDialog(winner);
+            }
+        } else if (message.startsWith("GAME_DRAW:")) {
+            // Parse: GAME_DRAW:MOVE:row,col
+            String[] parts = message.split(":");
+            if (parts.length >= 3) {
+                String[] coords = parts[2].split(",");
+                
+                int row = Integer.parseInt(coords[0]);
+                int col = Integer.parseInt(coords[1]);
+                
+                // Update the board with the final move
+                int player = isMyTurn ? (myPlayerNumber.equals("PLAYER1") ? PLAYER1 : PLAYER2) : 
+                             (myPlayerNumber.equals("PLAYER1") ? PLAYER2 : PLAYER1);
+                gameBoard[row][col] = player;
+                updateGamePiece(row, col, player);
+                
+                gameOver = true;
+                showDrawDialog();
+            }
+        } else if (message.startsWith("OPPONENT_LEFT:")) {
+            String opponentName = message.substring(14);
+            Toast.makeText(this, opponentName + " left the game", Toast.LENGTH_LONG).show();
+            gameOver = true;
+            showGameOverDialog("Opponent disconnected. You win!");
+        } else if (message.equals("NOT_YOUR_TURN")) {
+            Toast.makeText(this, "It's not your turn!", Toast.LENGTH_SHORT).show();
+        } else if (message.startsWith("INVALID_MOVE:")) {
+            String reason = message.substring(13);
+            Toast.makeText(this, "Invalid move: " + reason, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -341,9 +519,9 @@ public class GameActivity extends AppCompatActivity {
         builder.setTitle("Forfeit Game");
         
         String currentPlayerName = (currentPlayer == PLAYER1) ? player1Name : player2Name;
-        String opponentName = (currentPlayer == PLAYER1) ? player2Name : player1Name;
+        String otherPlayerName = (currentPlayer == PLAYER1) ? player2Name : player1Name;
         
-        builder.setMessage("Are you sure you want to forfeit the game? " + opponentName + " will win.");
+        builder.setMessage("Are you sure you want to forfeit the game? " + otherPlayerName + " will win.");
         
         builder.setPositiveButton("Yes, Forfeit", new DialogInterface.OnClickListener() {
             @Override
