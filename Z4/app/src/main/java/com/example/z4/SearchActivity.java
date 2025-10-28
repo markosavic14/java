@@ -5,10 +5,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.z4.model.Artist;
@@ -21,9 +23,13 @@ import java.util.List;
 public class SearchActivity extends Activity {
 
     private RadioGroup radioGroupSearchType;
-    private RadioButton radioSongsByGenre;
+    private RadioButton radioSongsByName;
     private RadioButton radioSongsByArtist;
     private RadioButton radioArtistsByGenre;
+    private TextView textViewSongName;
+    private TextView textViewGenre;
+    private TextView textViewArtist;
+    private EditText editTextSongName;
     private Spinner spinnerGenre;
     private Spinner spinnerArtist;
     private Button buttonSearch;
@@ -44,9 +50,15 @@ public class SearchActivity extends Activity {
 
     private void initializeViews() {
         radioGroupSearchType = findViewById(R.id.radioGroupSearchType);
-        radioSongsByGenre = findViewById(R.id.radioSongsByGenre);
+        radioSongsByName = findViewById(R.id.radioSongsByName);
         radioSongsByArtist = findViewById(R.id.radioSongsByArtist);
         radioArtistsByGenre = findViewById(R.id.radioArtistsByGenre);
+        
+        textViewSongName = findViewById(R.id.textViewSongName);
+        textViewGenre = findViewById(R.id.textViewGenre);
+        textViewArtist = findViewById(R.id.textViewArtist);
+        
+        editTextSongName = findViewById(R.id.editTextSongName);
         spinnerGenre = findViewById(R.id.spinnerGenre);
         spinnerArtist = findViewById(R.id.spinnerArtist);
         buttonSearch = findViewById(R.id.buttonSearch);
@@ -74,26 +86,39 @@ public class SearchActivity extends Activity {
         artistAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerArtist.setAdapter(artistAdapter);
 
-        // Initially show only genre spinner
-        updateSpinnerVisibility(R.id.radioSongsByGenre);
+        // Initially show only song name input
+        updateSpinnerVisibility(R.id.radioSongsByName);
     }
 
     private void updateSpinnerVisibility(int checkedId) {
+        // Hide all inputs first
+        textViewSongName.setVisibility(View.GONE);
+        editTextSongName.setVisibility(View.GONE);
+        textViewGenre.setVisibility(View.GONE);
         spinnerGenre.setVisibility(View.GONE);
+        textViewArtist.setVisibility(View.GONE);
         spinnerArtist.setVisibility(View.GONE);
 
-        if (checkedId == R.id.radioSongsByGenre || checkedId == R.id.radioArtistsByGenre) {
-            spinnerGenre.setVisibility(View.VISIBLE);
+        if (checkedId == R.id.radioSongsByName) {
+            // Show song name input
+            textViewSongName.setVisibility(View.VISIBLE);
+            editTextSongName.setVisibility(View.VISIBLE);
         } else if (checkedId == R.id.radioSongsByArtist) {
+            // Show artist spinner
+            textViewArtist.setVisibility(View.VISIBLE);
             spinnerArtist.setVisibility(View.VISIBLE);
+        } else if (checkedId == R.id.radioArtistsByGenre) {
+            // Show genre spinner
+            textViewGenre.setVisibility(View.VISIBLE);
+            spinnerGenre.setVisibility(View.VISIBLE);
         }
     }
 
     private void performSearch() {
         int checkedId = radioGroupSearchType.getCheckedRadioButtonId();
         
-        if (checkedId == R.id.radioSongsByGenre) {
-            searchSongsByGenre();
+        if (checkedId == R.id.radioSongsByName) {
+            searchSongsByName();
         } else if (checkedId == R.id.radioSongsByArtist) {
             searchSongsByArtist();
         } else if (checkedId == R.id.radioArtistsByGenre) {
@@ -101,6 +126,18 @@ public class SearchActivity extends Activity {
         } else {
             Toast.makeText(this, "Select search type", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void searchSongsByName() {
+        String songName = editTextSongName.getText().toString().trim();
+        
+        if (songName.isEmpty()) {
+            Toast.makeText(this, "Enter song name", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<Song> songs = dbManager.getSongsByName(songName);
+        displaySongs(songs);
     }
 
     private void searchSongsByGenre() {

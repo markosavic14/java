@@ -400,6 +400,34 @@ public class SQLiteManager extends SQLiteOpenHelper {
         return songs;
     }
 
+    public List<Song> getSongsByName(String songName) {
+        List<Song> songs = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
+                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+                       " FROM " + TABLE_SONGS + " s" +
+                       " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
+                       " LEFT JOIN " + TABLE_ARTISTS + " a ON s." + SONG_ARTIST_ID + " = a." + ARTIST_ID +
+                       " WHERE s." + SONG_NAME + " LIKE ? ORDER BY s." + SONG_NAME;
+        
+        Cursor cursor = db.rawQuery(query, new String[]{"%" + songName + "%"});
+
+        while (cursor.moveToNext()) {
+            Song song = new Song(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
+                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
+                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+            );
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            songs.add(song);
+        }
+        cursor.close();
+        return songs;
+    }
+
     public int updateSong(Song song) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
