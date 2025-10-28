@@ -226,7 +226,7 @@ public class SearchActivity extends Activity {
             return;
         }
         
-        int userId = UserSession.getInstance().getUserId();
+        int userId = UserSession.getInstance().getCurrentUser().getId();
         List<Playlist> allPlaylists = dbManager.getPlaylistsByUser(userId);
         List<Song> songs = new ArrayList<>();
         
