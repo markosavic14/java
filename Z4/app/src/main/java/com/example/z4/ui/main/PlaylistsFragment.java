@@ -100,32 +100,38 @@ public class PlaylistsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Add Playlist")
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String playlistName = editTextPlaylistName.getText().toString().trim();
+                .setPositiveButton("Add", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String playlistName = editTextPlaylistName.getText().toString().trim();
 
-                    if (playlistName.isEmpty()) {
-                        Toast.makeText(requireContext(), "Enter playlist name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (playlistName.isEmpty()) {
+                Toast.makeText(requireContext(), "Enter playlist name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    User currentUser = UserSession.getInstance().getCurrentUser();
-                    if (currentUser == null) {
-                        Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            User currentUser = UserSession.getInstance().getCurrentUser();
+            if (currentUser == null) {
+                Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    Playlist newPlaylist = new Playlist(playlistName, currentUser.getId());
-                    long result = dbManager.addPlaylist(newPlaylist);
-                    
-                    if (result > 0) {
-                        Toast.makeText(requireContext(), "Playlist added", Toast.LENGTH_SHORT).show();
-                        loadPlaylists();
-                    } else {
-                        Toast.makeText(requireContext(), "Error adding playlist", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            Playlist newPlaylist = new Playlist(playlistName, currentUser.getId());
+            long result = dbManager.addPlaylist(newPlaylist);
+            
+            if (result > 0) {
+                Toast.makeText(requireContext(), "Playlist added", Toast.LENGTH_SHORT).show();
+                loadPlaylists();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(requireContext(), "Error adding playlist", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showPlaylistSongs(Playlist playlist) {
@@ -231,26 +237,32 @@ public class PlaylistsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Edit Playlist")
-                .setPositiveButton("Update", (dialog, which) -> {
-                    String newPlaylistName = editTextPlaylistName.getText().toString().trim();
+                .setPositiveButton("Update", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String newPlaylistName = editTextPlaylistName.getText().toString().trim();
 
-                    if (newPlaylistName.isEmpty()) {
-                        Toast.makeText(requireContext(), "Enter playlist name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (newPlaylistName.isEmpty()) {
+                Toast.makeText(requireContext(), "Enter playlist name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    playlist.setName(newPlaylistName);
-                    int result = dbManager.updatePlaylist(playlist);
-                    
-                    if (result > 0) {
-                        Toast.makeText(requireContext(), "Playlist updated", Toast.LENGTH_SHORT).show();
-                        loadPlaylists();
-                    } else {
-                        Toast.makeText(requireContext(), "Error updating playlist", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            playlist.setName(newPlaylistName);
+            int result = dbManager.updatePlaylist(playlist);
+            
+            if (result > 0) {
+                Toast.makeText(requireContext(), "Playlist updated", Toast.LENGTH_SHORT).show();
+                loadPlaylists();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(requireContext(), "Error updating playlist", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeletePlaylistConfirmation(Playlist playlist) {

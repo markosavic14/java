@@ -81,26 +81,32 @@ public class GenresFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Add Genre")
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String genreName = editTextGenreName.getText().toString().trim();
+                .setPositiveButton("Add", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String genreName = editTextGenreName.getText().toString().trim();
 
-                    if (genreName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter genre name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (genreName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter genre name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    Genre newGenre = new Genre(genreName);
-                    long result = dbManager.addGenre(newGenre);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Genre added", Toast.LENGTH_SHORT).show();
-                        loadGenres();
-                    } else {
-                        Toast.makeText(getContext(), "Error adding genre", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            Genre newGenre = new Genre(genreName);
+            long result = dbManager.addGenre(newGenre);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Genre added", Toast.LENGTH_SHORT).show();
+                loadGenres();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error adding genre", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showEditGenreDialog(Genre genre) {
@@ -112,27 +118,33 @@ public class GenresFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Edit Genre")
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String genreName = editTextGenreName.getText().toString().trim();
+                .setPositiveButton("Save", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String genreName = editTextGenreName.getText().toString().trim();
 
-                    if (genreName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter genre name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (genreName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter genre name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    genre.setName(genreName);
-                    
-                    int result = dbManager.updateGenre(genre);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Genre updated", Toast.LENGTH_SHORT).show();
-                        loadGenres();
-                    } else {
-                        Toast.makeText(getContext(), "Error updating genre", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            genre.setName(genreName);
+            
+            int result = dbManager.updateGenre(genre);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Genre updated", Toast.LENGTH_SHORT).show();
+                loadGenres();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error updating genre", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeleteConfirmation(Genre genre) {

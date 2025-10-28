@@ -104,33 +104,39 @@ public class SongsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Add Song")
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String songName = editTextSongName.getText().toString().trim();
-                    Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
-                    Artist selectedArtist = (Artist) spinnerArtist.getSelectedItem();
+                .setPositiveButton("Add", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String songName = editTextSongName.getText().toString().trim();
+            Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
+            Artist selectedArtist = (Artist) spinnerArtist.getSelectedItem();
 
-                    if (songName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter song name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (songName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter song name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    if (selectedGenre == null || selectedArtist == null) {
-                        Toast.makeText(getContext(), "Select genre and artist", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (selectedGenre == null || selectedArtist == null) {
+                Toast.makeText(getContext(), "Select genre and artist", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    Song newSong = new Song(songName, selectedGenre.getId(), selectedArtist.getId());
-                    long result = dbManager.addSong(newSong);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Song added", Toast.LENGTH_SHORT).show();
-                        loadSongs();
-                    } else {
-                        Toast.makeText(getContext(), "Error adding song", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            Song newSong = new Song(songName, selectedGenre.getId(), selectedArtist.getId());
+            long result = dbManager.addSong(newSong);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Song added", Toast.LENGTH_SHORT).show();
+                loadSongs();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error adding song", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showEditSongDialog(Song song) {
@@ -169,36 +175,42 @@ public class SongsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Edit Song")
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String songName = editTextSongName.getText().toString().trim();
-                    Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
-                    Artist selectedArtist = (Artist) spinnerArtist.getSelectedItem();
+                .setPositiveButton("Save", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String songName = editTextSongName.getText().toString().trim();
+            Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
+            Artist selectedArtist = (Artist) spinnerArtist.getSelectedItem();
 
-                    if (songName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter song name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (songName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter song name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    if (selectedGenre == null || selectedArtist == null) {
-                        Toast.makeText(getContext(), "Select genre and artist", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (selectedGenre == null || selectedArtist == null) {
+                Toast.makeText(getContext(), "Select genre and artist", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    song.setName(songName);
-                    song.setGenreId(selectedGenre.getId());
-                    song.setArtistId(selectedArtist.getId());
-                    
-                    int result = dbManager.updateSong(song);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Song updated", Toast.LENGTH_SHORT).show();
-                        loadSongs();
-                    } else {
-                        Toast.makeText(getContext(), "Error updating song", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            song.setName(songName);
+            song.setGenreId(selectedGenre.getId());
+            song.setArtistId(selectedArtist.getId());
+            
+            int result = dbManager.updateSong(song);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Song updated", Toast.LENGTH_SHORT).show();
+                loadSongs();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error updating song", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeleteConfirmation(Song song) {
