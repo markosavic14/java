@@ -33,10 +33,10 @@
             android:text="Search songs by artist" />
 
         <RadioButton
-            android:id="@+id/radioArtistsByGenre"
+            android:id="@+id/radioSongsByGenre"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Search artists by genre" />
+            android:text="Search songs by genre" />
 
     </RadioGroup>
 

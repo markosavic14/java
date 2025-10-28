@@ -25,7 +25,7 @@ public class SearchActivity extends Activity {
     private RadioGroup radioGroupSearchType;
     private RadioButton radioSongsByName;
     private RadioButton radioSongsByArtist;
-    private RadioButton radioArtistsByGenre;
+    private RadioButton radioSongsByGenre;
     private TextView textViewSongName;
     private TextView textViewGenre;
     private TextView textViewArtist;
@@ -52,7 +52,7 @@ public class SearchActivity extends Activity {
         radioGroupSearchType = findViewById(R.id.radioGroupSearchType);
         radioSongsByName = findViewById(R.id.radioSongsByName);
         radioSongsByArtist = findViewById(R.id.radioSongsByArtist);
-        radioArtistsByGenre = findViewById(R.id.radioArtistsByGenre);
+        radioSongsByGenre = findViewById(R.id.radioSongsByGenre);
         
         textViewSongName = findViewById(R.id.textViewSongName);
         textViewGenre = findViewById(R.id.textViewGenre);
@@ -107,7 +107,7 @@ public class SearchActivity extends Activity {
             // Show artist spinner
             textViewArtist.setVisibility(View.VISIBLE);
             spinnerArtist.setVisibility(View.VISIBLE);
-        } else if (checkedId == R.id.radioArtistsByGenre) {
+        } else if (checkedId == R.id.radioSongsByGenre) {
             // Show genre spinner
             textViewGenre.setVisibility(View.VISIBLE);
             spinnerGenre.setVisibility(View.VISIBLE);
@@ -121,8 +121,8 @@ public class SearchActivity extends Activity {
             searchSongsByName();
         } else if (checkedId == R.id.radioSongsByArtist) {
             searchSongsByArtist();
-        } else if (checkedId == R.id.radioArtistsByGenre) {
-            searchArtistsByGenre();
+        } else if (checkedId == R.id.radioSongsByGenre) {
+            searchSongsByGenre();
         } else {
             Toast.makeText(this, "Select search type", Toast.LENGTH_SHORT).show();
         }
