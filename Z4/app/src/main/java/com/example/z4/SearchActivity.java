@@ -36,6 +36,7 @@ public class SearchActivity extends Activity {
     private TextView textViewGenre;
     private TextView textViewArtist;
     private TextView textViewPlaylist;
+    private TextView textViewPlaylistSongName;
     private EditText editTextSongName;
     private EditText editTextGenreName;
     private EditText editTextArtistName;
@@ -44,6 +45,7 @@ public class SearchActivity extends Activity {
     private TextView textViewSearchGenre;
     private EditText editTextSearchArtistName;
     private EditText editTextSearchGenreName;
+    private Spinner spinnerPlaylist;
     private Button buttonSearch;
     private ListView listViewResults;
     private SQLiteManager dbManager;
@@ -75,6 +77,7 @@ public class SearchActivity extends Activity {
         textViewGenre = findViewById(R.id.textViewGenre);
         textViewArtist = findViewById(R.id.textViewArtist);
         textViewPlaylist = findViewById(R.id.textViewPlaylist);
+        textViewPlaylistSongName = findViewById(R.id.textViewPlaylistSongName);
         textViewSearchArtist = findViewById(R.id.textViewSearchArtist);
         textViewSearchGenre = findViewById(R.id.textViewSearchGenre);
         
@@ -84,6 +87,7 @@ public class SearchActivity extends Activity {
         editTextPlaylistName = findViewById(R.id.editTextPlaylistName);
         editTextSearchArtistName = findViewById(R.id.editTextSearchArtistName);
         editTextSearchGenreName = findViewById(R.id.editTextSearchGenreName);
+        spinnerPlaylist = findViewById(R.id.spinnerPlaylist);
         buttonSearch = findViewById(R.id.buttonSearch);
         listViewResults = findViewById(R.id.listViewResults);
     }
@@ -105,6 +109,8 @@ public class SearchActivity extends Activity {
         textViewArtist.setVisibility(View.GONE);
         editTextArtistName.setVisibility(View.GONE);
         textViewPlaylist.setVisibility(View.GONE);
+        spinnerPlaylist.setVisibility(View.GONE);
+        textViewPlaylistSongName.setVisibility(View.GONE);
         editTextPlaylistName.setVisibility(View.GONE);
         textViewSearchArtist.setVisibility(View.GONE);
         editTextSearchArtistName.setVisibility(View.GONE);
@@ -124,9 +130,12 @@ public class SearchActivity extends Activity {
             textViewGenre.setVisibility(View.VISIBLE);
             editTextGenreName.setVisibility(View.VISIBLE);
         } else if (checkedId == R.id.radioSongsInPlaylist) {
-            // Show playlist input
+            // Show playlist dropdown and song name input
             textViewPlaylist.setVisibility(View.VISIBLE);
+            spinnerPlaylist.setVisibility(View.VISIBLE);
+            textViewPlaylistSongName.setVisibility(View.VISIBLE);
             editTextPlaylistName.setVisibility(View.VISIBLE);
+            loadUserPlaylists();
         } else if (checkedId == R.id.radioSearchArtists) {
             // Show artist search input
             textViewSearchArtist.setVisibility(View.VISIBLE);
@@ -213,10 +222,10 @@ public class SearchActivity extends Activity {
     }
 
     private void searchSongsInPlaylist() {
-        String playlistName = editTextPlaylistName.getText().toString().trim();
+        String songName = editTextPlaylistName.getText().toString().trim();
         
-        if (playlistName.isEmpty()) {
-            Toast.makeText(this, "Enter playlist name", Toast.LENGTH_SHORT).show();
+        if (songName.isEmpty()) {
+            Toast.makeText(this, "Enter song name", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -226,18 +235,42 @@ public class SearchActivity extends Activity {
             return;
         }
         
-        int userId = UserSession.getInstance().getCurrentUser().getId();
-        List<Playlist> allPlaylists = dbManager.getPlaylistsByUser(userId);
-        List<Song> songs = new ArrayList<>();
+        // Get selected playlist
+        if (spinnerPlaylist.getSelectedItem() == null) {
+            Toast.makeText(this, "No playlist selected", Toast.LENGTH_SHORT).show();
+            return;
+        }
         
-        // Find playlists that match the name
-        for (Playlist playlist : allPlaylists) {
-            if (playlist.getName().toLowerCase().contains(playlistName.toLowerCase())) {
-                songs.addAll(dbManager.getSongsInPlaylist(playlist.getId()));
+        Playlist selectedPlaylist = (Playlist) spinnerPlaylist.getSelectedItem();
+        List<Song> allSongsInPlaylist = dbManager.getSongsInPlaylist(selectedPlaylist.getId());
+        List<Song> matchingSongs = new ArrayList<>();
+        
+        // Filter songs by name
+        for (Song song : allSongsInPlaylist) {
+            if (song.getName().toLowerCase().contains(songName.toLowerCase())) {
+                matchingSongs.add(song);
             }
         }
         
-        displaySongs(songs);
+        displaySongs(matchingSongs);
+    }
+
+    private void loadUserPlaylists() {
+        if (!UserSession.getInstance().isUserLoggedIn()) {
+            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        int userId = UserSession.getInstance().getCurrentUser().getId();
+        List<Playlist> playlists = dbManager.getPlaylistsByUser(userId);
+        
+        if (playlists.isEmpty()) {
+            Toast.makeText(this, "No playlists found", Toast.LENGTH_SHORT).show();
+        }
+        
+        ArrayAdapter<Playlist> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, playlists);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPlaylist.setAdapter(adapter);
     }
 
     private void displaySongs(List<Song> songs) {
