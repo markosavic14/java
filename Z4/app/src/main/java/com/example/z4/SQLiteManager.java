@@ -17,7 +17,7 @@ import java.util.List;
 public class SQLiteManager extends SQLiteOpenHelper {
     private static SQLiteManager sqLiteManager;
     private static final String DATABASE_NAME = "z4DB";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2; // Incremented to force schema update
 
     // Table names
     private static final String TABLE_USERS = "users";
