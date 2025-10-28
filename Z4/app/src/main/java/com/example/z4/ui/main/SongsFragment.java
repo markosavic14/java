@@ -28,7 +28,6 @@ import java.util.List;
 public class SongsFragment extends Fragment {
 
     private ListView listViewSongs;
-    private Button buttonAddSong;
     private SQLiteManager dbManager;
     private List<Song> songsList;
     private ArrayAdapter<Song> songsAdapter;
@@ -46,13 +45,10 @@ public class SongsFragment extends Fragment {
         dbManager = SQLiteManager.instanceOfDatabase(getContext());
         
         listViewSongs = root.findViewById(R.id.listViewSongs);
-        buttonAddSong = root.findViewById(R.id.buttonAddSong);
 
         setupListView();
         loadSongs();
         loadGenresAndArtists();
-
-        buttonAddSong.setOnClickListener(v -> showAddSongDialog());
 
         listViewSongs.setOnItemClickListener((parent, view, position, id) -> {
             Song selectedSong = songsList.get(position);
@@ -83,6 +79,10 @@ public class SongsFragment extends Fragment {
     private void loadGenresAndArtists() {
         genresList = dbManager.getAllGenres();
         artistsList = dbManager.getAllArtists();
+    }
+
+    public void showAddDialog() {
+        showAddSongDialog();
     }
 
     private void showAddSongDialog() {

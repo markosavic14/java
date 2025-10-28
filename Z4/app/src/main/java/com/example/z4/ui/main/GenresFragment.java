@@ -24,7 +24,6 @@ import java.util.List;
 public class GenresFragment extends Fragment {
 
     private ListView listViewGenres;
-    private Button buttonAddGenre;
     private SQLiteManager dbManager;
     private List<Genre> genresList;
     private ArrayAdapter<Genre> genresAdapter;
@@ -40,12 +39,9 @@ public class GenresFragment extends Fragment {
         dbManager = SQLiteManager.instanceOfDatabase(getContext());
         
         listViewGenres = root.findViewById(R.id.listViewGenres);
-        buttonAddGenre = root.findViewById(R.id.buttonAddGenre);
 
         setupListView();
         loadGenres();
-
-        buttonAddGenre.setOnClickListener(v -> showAddGenreDialog());
 
         listViewGenres.setOnItemClickListener((parent, view, position, id) -> {
             Genre selectedGenre = genresList.get(position);
@@ -71,6 +67,10 @@ public class GenresFragment extends Fragment {
         genresList.clear();
         genresList.addAll(dbManager.getAllGenres());
         genresAdapter.notifyDataSetChanged();
+    }
+
+    public void showAddDialog() {
+        showAddGenreDialog();
     }
 
     private void showAddGenreDialog() {

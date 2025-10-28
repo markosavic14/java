@@ -28,7 +28,6 @@ public class PlaylistsFragment extends Fragment {
 
     private SQLiteManager dbManager;
     private ListView listViewPlaylists;
-    private Button buttonAddPlaylist;
     private ArrayAdapter<Playlist> playlistsAdapter;
     private List<Playlist> playlistsList;
 
@@ -56,7 +55,6 @@ public class PlaylistsFragment extends Fragment {
 
         // Initialize UI components
         listViewPlaylists = view.findViewById(R.id.listViewPlaylists);
-        buttonAddPlaylist = view.findViewById(R.id.buttonAddPlaylist);
 
         // Setup adapter
         playlistsList = new ArrayList<>();
@@ -67,8 +65,6 @@ public class PlaylistsFragment extends Fragment {
         loadPlaylists();
 
         // Set click listeners
-        buttonAddPlaylist.setOnClickListener(v -> showAddPlaylistDialog());
-        
         listViewPlaylists.setOnItemClickListener((parent, view1, position, id) -> {
             Playlist selectedPlaylist = playlistsList.get(position);
             showPlaylistSongs(selectedPlaylist);
@@ -90,6 +86,10 @@ public class PlaylistsFragment extends Fragment {
             playlistsList.addAll(dbManager.getPlaylistsByUser(currentUser.getId()));
             playlistsAdapter.notifyDataSetChanged();
         }
+    }
+
+    public void showAddDialog() {
+        showAddPlaylistDialog();
     }
 
     private void showAddPlaylistDialog() {

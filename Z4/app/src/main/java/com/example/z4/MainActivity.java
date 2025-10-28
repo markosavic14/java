@@ -7,6 +7,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 
+import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,12 +16,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 
+import com.example.z4.ui.main.ArtistsFragment;
+import com.example.z4.ui.main.GenresFragment;
+import com.example.z4.ui.main.PlaylistsFragment;
 import com.example.z4.ui.main.SectionsPagerAdapter;
+import com.example.z4.ui.main.SongsFragment;
 import com.example.z4.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
+    private SectionsPagerAdapter sectionsPagerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
+        sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
         ViewPager viewPager = binding.viewPager;
         viewPager.setAdapter(sectionsPagerAdapter);
         TabLayout tabs = binding.tabs;
@@ -57,11 +63,23 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null)
-                        .setAnchorView(R.id.fab).show();
+                handleFabClick(viewPager.getCurrentItem());
             }
         });
+    }
+
+    private void handleFabClick(int currentTabPosition) {
+        Fragment currentFragment = sectionsPagerAdapter.getItem(currentTabPosition);
+        
+        if (currentFragment instanceof SongsFragment) {
+            ((SongsFragment) currentFragment).showAddDialog();
+        } else if (currentFragment instanceof ArtistsFragment) {
+            ((ArtistsFragment) currentFragment).showAddDialog();
+        } else if (currentFragment instanceof GenresFragment) {
+            ((GenresFragment) currentFragment).showAddDialog();
+        } else if (currentFragment instanceof PlaylistsFragment) {
+            ((PlaylistsFragment) currentFragment).showAddDialog();
+        }
     }
 
     @Override
