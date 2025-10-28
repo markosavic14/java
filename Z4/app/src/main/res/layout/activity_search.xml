@@ -38,6 +38,24 @@
             android:layout_height="wrap_content"
             android:text="Search songs by genre" />
 
+        <RadioButton
+            android:id="@+id/radioSongsInPlaylist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search songs in playlist" />
+
+        <RadioButton
+            android:id="@+id/radioSearchArtists"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search artists" />
+
+        <RadioButton
+            android:id="@+id/radioSearchGenres"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search genres" />
+
     </RadioGroup>
 
     <TextView
@@ -87,6 +105,57 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:hint="Enter artist name"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textViewPlaylist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Playlist name:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/editTextPlaylistName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Enter playlist name"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textViewSearchArtist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Artist name:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/editTextSearchArtistName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Enter artist name"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textViewSearchGenre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Genre name:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/editTextSearchGenreName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Enter genre name"
         android:visibility="gone" />
 
     <Button
