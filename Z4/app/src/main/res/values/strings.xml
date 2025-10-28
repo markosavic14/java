@@ -11,7 +11,7 @@
     <string name="login_failed">"Login failed"</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="songs">Songs</string>
-    <string name="singers">Singers</string>
+    <string name="singers">Artists</string>
     <string name="genres">Genres</string>
     <string name="playlists">Playlists</string>
 </resources>

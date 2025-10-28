@@ -17,6 +17,11 @@
             android:label="@string/title_activity_main"
             android:theme="@style/Theme.Z4.NoActionBar" />
         <activity
+            android:name=".SearchActivity"
+            android:exported="false"
+            android:label="Search"
+            android:parentActivityName=".MainActivity" />
+        <activity
             android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
