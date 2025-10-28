@@ -96,11 +96,22 @@ public class SongsFragment extends Fragment {
         artistsList = dbManager.getAllArtists();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh data when fragment becomes visible
+        loadGenresAndArtists();
+        loadSongs();
+    }
+
     public void showAddDialog() {
         showAddSongDialog();
     }
 
     private void showAddSongDialog() {
+        // Refresh the lists before showing the dialog
+        loadGenresAndArtists();
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_edit_song, null);
         
@@ -155,6 +166,9 @@ public class SongsFragment extends Fragment {
     }
 
     private void showEditSongDialog(Song song) {
+        // Refresh the lists before showing the dialog
+        loadGenresAndArtists();
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_edit_song, null);
         

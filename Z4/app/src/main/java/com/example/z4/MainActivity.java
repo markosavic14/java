@@ -60,6 +60,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Set up logout button click listener
+        ImageButton logoutButton = binding.logoutButton;
+        logoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                logout();
+            }
+        });
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
