@@ -244,6 +244,10 @@ public class SQLiteManager extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(ARTIST_NAME, artist.getName());
         values.put(ARTIST_GENRE_ID, artist.getGenreId());
+        
+        android.util.Log.d("SQLiteManager", "addArtist - Name: " + artist.getName() + ", GenreID: " + artist.getGenreId());
+        android.util.Log.d("SQLiteManager", "addArtist - ContentValues: " + values.toString());
+        
         return db.insert(TABLE_ARTISTS, null, values);
     }
 
@@ -251,7 +255,8 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Artist> artists = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT a." + ARTIST_ID + ", a." + ARTIST_NAME + ", a." + ARTIST_GENRE_ID + ", g." + GENRE_NAME + 
+        String query = "SELECT a." + ARTIST_ID + " as artist_id, a." + ARTIST_NAME + " as artist_name, " +
+                       "a." + ARTIST_GENRE_ID + " as artist_genre_id, g." + GENRE_NAME + " as genre_name" + 
                        " FROM " + TABLE_ARTISTS + " a LEFT JOIN " + TABLE_GENRES + " g ON a." + ARTIST_GENRE_ID + " = g." + GENRE_ID +
                        " ORDER BY a." + ARTIST_NAME;
         
@@ -259,11 +264,11 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Artist artist = new Artist(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(ARTIST_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(ARTIST_GENRE_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("artist_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("artist_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("artist_genre_id"))
             );
-            artist.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
+            artist.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
             artists.add(artist);
         }
         cursor.close();
@@ -274,7 +279,8 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Artist> artists = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT a." + ARTIST_ID + ", a." + ARTIST_NAME + ", a." + ARTIST_GENRE_ID + ", g." + GENRE_NAME + 
+        String query = "SELECT a." + ARTIST_ID + " as artist_id, a." + ARTIST_NAME + " as artist_name, " +
+                       "a." + ARTIST_GENRE_ID + " as artist_genre_id, g." + GENRE_NAME + " as genre_name" + 
                        " FROM " + TABLE_ARTISTS + " a LEFT JOIN " + TABLE_GENRES + " g ON a." + ARTIST_GENRE_ID + " = g." + GENRE_ID +
                        " WHERE a." + ARTIST_GENRE_ID + " = ? ORDER BY a." + ARTIST_NAME;
         
@@ -282,11 +288,11 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Artist artist = new Artist(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(ARTIST_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(ARTIST_GENRE_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("artist_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("artist_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("artist_genre_id"))
             );
-            artist.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
+            artist.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
             artists.add(artist);
         }
         cursor.close();
@@ -313,6 +319,10 @@ public class SQLiteManager extends SQLiteOpenHelper {
         values.put(SONG_NAME, song.getName());
         values.put(SONG_GENRE_ID, song.getGenreId());
         values.put(SONG_ARTIST_ID, song.getArtistId());
+        
+        android.util.Log.d("SQLiteManager", "addSong - Name: " + song.getName() + ", GenreID: " + song.getGenreId() + ", ArtistID: " + song.getArtistId());
+        android.util.Log.d("SQLiteManager", "addSong - ContentValues: " + values.toString());
+        
         return db.insert(TABLE_SONGS, null, values);
     }
 
@@ -320,8 +330,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Song> songs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
-                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+        String query = "SELECT s." + SONG_ID + " as song_id, s." + SONG_NAME + " as song_name, " +
+                       "s." + SONG_GENRE_ID + " as song_genre_id, s." + SONG_ARTIST_ID + " as song_artist_id, " + 
+                       "g." + GENRE_NAME + " as genre_name, a." + ARTIST_NAME + " as artist_name" + 
                        " FROM " + TABLE_SONGS + " s" +
                        " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
                        " LEFT JOIN " + TABLE_ARTISTS + " a ON s." + SONG_ARTIST_ID + " = a." + ARTIST_ID +
@@ -331,13 +342,13 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Song song = new Song(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("song_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_genre_id")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_artist_id"))
             );
-            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
-            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow("artist_name")));
             songs.add(song);
         }
         cursor.close();
@@ -348,8 +359,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Song> songs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
-                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+        String query = "SELECT s." + SONG_ID + " as song_id, s." + SONG_NAME + " as song_name, " +
+                       "s." + SONG_GENRE_ID + " as song_genre_id, s." + SONG_ARTIST_ID + " as song_artist_id, " + 
+                       "g." + GENRE_NAME + " as genre_name, a." + ARTIST_NAME + " as artist_name" + 
                        " FROM " + TABLE_SONGS + " s" +
                        " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
                        " LEFT JOIN " + TABLE_ARTISTS + " a ON s." + SONG_ARTIST_ID + " = a." + ARTIST_ID +
@@ -359,13 +371,13 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Song song = new Song(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("song_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_genre_id")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_artist_id"))
             );
-            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
-            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow("artist_name")));
             songs.add(song);
         }
         cursor.close();
@@ -376,8 +388,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Song> songs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
-                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+        String query = "SELECT s." + SONG_ID + " as song_id, s." + SONG_NAME + " as song_name, " +
+                       "s." + SONG_GENRE_ID + " as song_genre_id, s." + SONG_ARTIST_ID + " as song_artist_id, " + 
+                       "g." + GENRE_NAME + " as genre_name, a." + ARTIST_NAME + " as artist_name" + 
                        " FROM " + TABLE_SONGS + " s" +
                        " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
                        " LEFT JOIN " + TABLE_ARTISTS + " a ON s." + SONG_ARTIST_ID + " = a." + ARTIST_ID +
@@ -387,13 +400,13 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Song song = new Song(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("song_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_genre_id")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_artist_id"))
             );
-            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
-            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow("artist_name")));
             songs.add(song);
         }
         cursor.close();
@@ -404,8 +417,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Song> songs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
-                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+        String query = "SELECT s." + SONG_ID + " as song_id, s." + SONG_NAME + " as song_name, " +
+                       "s." + SONG_GENRE_ID + " as song_genre_id, s." + SONG_ARTIST_ID + " as song_artist_id, " + 
+                       "g." + GENRE_NAME + " as genre_name, a." + ARTIST_NAME + " as artist_name" + 
                        " FROM " + TABLE_SONGS + " s" +
                        " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
                        " LEFT JOIN " + TABLE_ARTISTS + " a ON s." + SONG_ARTIST_ID + " = a." + ARTIST_ID +
@@ -415,13 +429,13 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Song song = new Song(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("song_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_genre_id")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_artist_id"))
             );
-            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
-            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow("artist_name")));
             songs.add(song);
         }
         cursor.close();
@@ -500,8 +514,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
         List<Song> songs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String query = "SELECT s." + SONG_ID + ", s." + SONG_NAME + ", s." + SONG_GENRE_ID + ", s." + SONG_ARTIST_ID + 
-                       ", g." + GENRE_NAME + ", a." + ARTIST_NAME + 
+        String query = "SELECT s." + SONG_ID + " as song_id, s." + SONG_NAME + " as song_name, " +
+                       "s." + SONG_GENRE_ID + " as song_genre_id, s." + SONG_ARTIST_ID + " as song_artist_id, " + 
+                       "g." + GENRE_NAME + " as genre_name, a." + ARTIST_NAME + " as artist_name" + 
                        " FROM " + TABLE_PLAYLIST_SONGS + " ps" +
                        " JOIN " + TABLE_SONGS + " s ON ps." + PLAYLIST_SONG_SONG_ID + " = s." + SONG_ID +
                        " LEFT JOIN " + TABLE_GENRES + " g ON s." + SONG_GENRE_ID + " = g." + GENRE_ID +
@@ -512,13 +527,13 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
         while (cursor.moveToNext()) {
             Song song = new Song(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(SONG_NAME)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_GENRE_ID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ARTIST_ID))
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_id")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("song_name")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_genre_id")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("song_artist_id"))
             );
-            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow(GENRE_NAME)));
-            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow(ARTIST_NAME)));
+            song.setGenreName(cursor.getString(cursor.getColumnIndexOrThrow("genre_name")));
+            song.setArtistName(cursor.getString(cursor.getColumnIndexOrThrow("artist_name")));
             songs.add(song);
         }
         cursor.close();

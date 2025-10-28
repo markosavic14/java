@@ -66,7 +66,22 @@ public class SongsFragment extends Fragment {
 
     private void setupListView() {
         songsList = new ArrayList<>();
-        songsAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, songsList);
+        songsAdapter = new ArrayAdapter<Song>(getContext(), android.R.layout.simple_list_item_2, android.R.id.text1, songsList) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                Song song = songsList.get(position);
+                
+                android.widget.TextView text1 = view.findViewById(android.R.id.text1);
+                android.widget.TextView text2 = view.findViewById(android.R.id.text2);
+                
+                text1.setText(song.getName());
+                text2.setText("Artist: " + (song.getArtistName() != null ? song.getArtistName() : "Unknown") + 
+                             " | Genre: " + (song.getGenreName() != null ? song.getGenreName() : "Unknown"));
+                
+                return view;
+            }
+        };
         listViewSongs.setAdapter(songsAdapter);
     }
 
