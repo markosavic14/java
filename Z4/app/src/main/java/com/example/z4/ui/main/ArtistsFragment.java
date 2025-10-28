@@ -109,32 +109,38 @@ public class ArtistsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Add Artist")
-                .setPositiveButton("Add", (dialog, which) -> {
-                    String artistName = editTextArtistName.getText().toString().trim();
-                    Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
+                .setPositiveButton("Add", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String artistName = editTextArtistName.getText().toString().trim();
+            Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
 
-                    if (artistName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter artist name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (artistName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter artist name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    if (selectedGenre == null) {
-                        Toast.makeText(getContext(), "Select genre", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (selectedGenre == null) {
+                Toast.makeText(getContext(), "Select genre", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    Artist newArtist = new Artist(artistName, selectedGenre.getId());
-                    long result = dbManager.addArtist(newArtist);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Artist added", Toast.LENGTH_SHORT).show();
-                        loadArtists();
-                    } else {
-                        Toast.makeText(getContext(), "Error adding artist", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            Artist newArtist = new Artist(artistName, selectedGenre.getId());
+            long result = dbManager.addArtist(newArtist);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Artist added", Toast.LENGTH_SHORT).show();
+                loadArtists();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error adding artist", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showEditArtistDialog(Artist artist) {
@@ -161,34 +167,40 @@ public class ArtistsFragment extends Fragment {
 
         builder.setView(dialogView)
                 .setTitle("Edit Artist")
-                .setPositiveButton("Save", (dialog, which) -> {
-                    String artistName = editTextArtistName.getText().toString().trim();
-                    Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
+                .setPositiveButton("Save", null) // Set to null initially
+                .setNegativeButton("Cancel", null);
+        
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        
+        // Override the positive button click to prevent auto-dismiss
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String artistName = editTextArtistName.getText().toString().trim();
+            Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
 
-                    if (artistName.isEmpty()) {
-                        Toast.makeText(getContext(), "Enter artist name", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (artistName.isEmpty()) {
+                Toast.makeText(getContext(), "Enter artist name", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    if (selectedGenre == null) {
-                        Toast.makeText(getContext(), "Select genre", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            if (selectedGenre == null) {
+                Toast.makeText(getContext(), "Select genre", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                    artist.setName(artistName);
-                    artist.setGenreId(selectedGenre.getId());
-                    
-                    int result = dbManager.updateArtist(artist);
-                    
-                    if (result > 0) {
-                        Toast.makeText(getContext(), "Artist updated", Toast.LENGTH_SHORT).show();
-                        loadArtists();
-                    } else {
-                        Toast.makeText(getContext(), "Error updating artist", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+            artist.setName(artistName);
+            artist.setGenreId(selectedGenre.getId());
+            
+            int result = dbManager.updateArtist(artist);
+            
+            if (result > 0) {
+                Toast.makeText(getContext(), "Artist updated", Toast.LENGTH_SHORT).show();
+                loadArtists();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(getContext(), "Error updating artist", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showDeleteConfirmation(Artist artist) {
