@@ -69,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleFabClick(int currentTabPosition) {
-        Fragment currentFragment = sectionsPagerAdapter.getItem(currentTabPosition);
+        // Get the actual fragment from the FragmentManager
+        Fragment currentFragment = getSupportFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + currentTabPosition);
         
         if (currentFragment instanceof SongsFragment) {
             ((SongsFragment) currentFragment).showAddDialog();
