@@ -77,7 +77,7 @@ public class ArtistsFragment extends Fragment {
                 android.widget.TextView text2 = view.findViewById(android.R.id.text2);
                 
                 text1.setText(artist.getName());
-                text2.setText("Genre: " + (artist.getZanrNaziv() != null ? artist.getZanrNaziv() : "Unknown"));
+                text2.setText("Genre: " + (artist.getGenreName() != null ? artist.getGenreName() : "Unknown"));
                 
                 return view;
             }

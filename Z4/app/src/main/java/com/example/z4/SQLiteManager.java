@@ -503,4 +503,14 @@ public class SQLiteManager extends SQLiteOpenHelper {
         String[] selectionArgs = {String.valueOf(playlistId), String.valueOf(songId)};
         return db.delete(TABLE_PLAYLIST_SONGS, selection, selectionArgs);
     }
+
+    public boolean isSongInPlaylist(int playlistId, int songId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selection = PLAYLIST_SONG_PLAYLIST_ID + " = ? AND " + PLAYLIST_SONG_SONG_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(playlistId), String.valueOf(songId)};
+        Cursor cursor = db.query(TABLE_PLAYLIST_SONGS, null, selection, selectionArgs, null, null, null);
+        boolean exists = cursor.getCount() > 0;
+        cursor.close();
+        return exists;
+    }
 }
