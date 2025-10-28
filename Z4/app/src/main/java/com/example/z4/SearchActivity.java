@@ -18,6 +18,8 @@ import com.example.z4.model.Genre;
 import com.example.z4.model.Song;
 
 import java.util.ArrayList;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class SearchActivity extends Activity {
@@ -30,8 +32,8 @@ public class SearchActivity extends Activity {
     private TextView textViewGenre;
     private TextView textViewArtist;
     private EditText editTextSongName;
-    private Spinner spinnerGenre;
-    private Spinner spinnerArtist;
+    private EditText editTextGenreName;
+    private EditText editTextArtistName;
     private Button buttonSearch;
     private ListView listViewResults;
     private SQLiteManager dbManager;
@@ -45,7 +47,9 @@ public class SearchActivity extends Activity {
         
         initializeViews();
         setupListeners();
-        loadSpinnerData();
+        
+        // Initially show only song name input
+        updateVisibility(R.id.radioSongsByName);
     }
 
     private void initializeViews() {
@@ -59,58 +63,41 @@ public class SearchActivity extends Activity {
         textViewArtist = findViewById(R.id.textViewArtist);
         
         editTextSongName = findViewById(R.id.editTextSongName);
-        spinnerGenre = findViewById(R.id.spinnerGenre);
-        spinnerArtist = findViewById(R.id.spinnerArtist);
+        editTextGenreName = findViewById(R.id.editTextGenreName);
+        editTextArtistName = findViewById(R.id.editTextArtistName);
         buttonSearch = findViewById(R.id.buttonSearch);
         listViewResults = findViewById(R.id.listViewResults);
     }
 
     private void setupListeners() {
         radioGroupSearchType.setOnCheckedChangeListener((group, checkedId) -> {
-            updateSpinnerVisibility(checkedId);
+            updateVisibility(checkedId);
         });
 
         buttonSearch.setOnClickListener(v -> performSearch());
     }
 
-    private void loadSpinnerData() {
-        // Load genres
-        List<Genre> genres = dbManager.getAllGenres();
-        ArrayAdapter<Genre> genreAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, genres);
-        genreAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerGenre.setAdapter(genreAdapter);
-
-        // Load artists
-        List<Artist> artists = dbManager.getAllArtists();
-        ArrayAdapter<Artist> artistAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, artists);
-        artistAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerArtist.setAdapter(artistAdapter);
-
-        // Initially show only song name input
-        updateSpinnerVisibility(R.id.radioSongsByName);
-    }
-
-    private void updateSpinnerVisibility(int checkedId) {
+    private void updateVisibility(int checkedId) {
         // Hide all inputs first
         textViewSongName.setVisibility(View.GONE);
         editTextSongName.setVisibility(View.GONE);
         textViewGenre.setVisibility(View.GONE);
-        spinnerGenre.setVisibility(View.GONE);
+        editTextGenreName.setVisibility(View.GONE);
         textViewArtist.setVisibility(View.GONE);
-        spinnerArtist.setVisibility(View.GONE);
+        editTextArtistName.setVisibility(View.GONE);
 
         if (checkedId == R.id.radioSongsByName) {
             // Show song name input
             textViewSongName.setVisibility(View.VISIBLE);
             editTextSongName.setVisibility(View.VISIBLE);
         } else if (checkedId == R.id.radioSongsByArtist) {
-            // Show artist spinner
+            // Show artist input
             textViewArtist.setVisibility(View.VISIBLE);
-            spinnerArtist.setVisibility(View.VISIBLE);
+            editTextArtistName.setVisibility(View.VISIBLE);
         } else if (checkedId == R.id.radioSongsByGenre) {
-            // Show genre spinner
+            // Show genre input
             textViewGenre.setVisibility(View.VISIBLE);
-            spinnerGenre.setVisibility(View.VISIBLE);
+            editTextGenreName.setVisibility(View.VISIBLE);
         }
     }
 
@@ -141,36 +128,45 @@ public class SearchActivity extends Activity {
     }
 
     private void searchSongsByGenre() {
-        Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
-        if (selectedGenre == null) {
-            Toast.makeText(this, "Select genre", Toast.LENGTH_SHORT).show();
+        String genreName = editTextGenreName.getText().toString().trim();
+        
+        if (genreName.isEmpty()) {
+            Toast.makeText(this, "Enter genre name", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        List<Song> songs = dbManager.getSongsByGenre(selectedGenre.getId());
+        // Find genres that match the name
+        List<Genre> allGenres = dbManager.getAllGenres();
+        List<Song> songs = new ArrayList<>();
+        
+        for (Genre genre : allGenres) {
+            if (genre.getName().toLowerCase().contains(genreName.toLowerCase())) {
+                songs.addAll(dbManager.getSongsByGenre(genre.getId()));
+            }
+        }
+        
         displaySongs(songs);
     }
 
     private void searchSongsByArtist() {
-        Artist selectedArtist = (Artist) spinnerArtist.getSelectedItem();
-        if (selectedArtist == null) {
-            Toast.makeText(this, "Select artist", Toast.LENGTH_SHORT).show();
+        String artistName = editTextArtistName.getText().toString().trim();
+        
+        if (artistName.isEmpty()) {
+            Toast.makeText(this, "Enter artist name", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        List<Song> songs = dbManager.getSongsByArtist(selectedArtist.getId());
+        // Find artists that match the name
+        List<Artist> allArtists = dbManager.getAllArtists();
+        List<Song> songs = new ArrayList<>();
+        
+        for (Artist artist : allArtists) {
+            if (artist.getName().toLowerCase().contains(artistName.toLowerCase())) {
+                songs.addAll(dbManager.getSongsByArtist(artist.getId()));
+            }
+        }
+        
         displaySongs(songs);
-    }
-
-    private void searchArtistsByGenre() {
-        Genre selectedGenre = (Genre) spinnerGenre.getSelectedItem();
-        if (selectedGenre == null) {
-            Toast.makeText(this, "Select genre", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        List<Artist> artists = dbManager.getArtistsByGenre(selectedGenre.getId());
-        displayArtists(artists);
     }
 
     private void displaySongs(List<Song> songs) {
@@ -191,31 +187,6 @@ public class SearchActivity extends Activity {
                 
                 text1.setText(song.getName());
                 text2.setText("Artist: " + song.getArtistName() + " | Genre: " + song.getGenreName());
-                
-                return view;
-            }
-        };
-        listViewResults.setAdapter(adapter);
-    }
-
-    private void displayArtists(List<Artist> artists) {
-        if (artists.isEmpty()) {
-            Toast.makeText(this, "No search results", Toast.LENGTH_SHORT).show();
-            listViewResults.setAdapter(null);
-            return;
-        }
-
-        ArrayAdapter<Artist> adapter = new ArrayAdapter<Artist>(this, android.R.layout.simple_list_item_2, android.R.id.text1, artists) {
-            @Override
-            public View getView(int position, View convertView, android.view.ViewGroup parent) {
-                View view = super.getView(position, convertView, parent);
-                Artist artist = artists.get(position);
-                
-                android.widget.TextView text1 = view.findViewById(android.R.id.text1);
-                android.widget.TextView text2 = view.findViewById(android.R.id.text2);
-                
-                text1.setText(artist.getName());
-                text2.setText("Genre: " + (artist.getGenreName() != null ? artist.getGenreName() : "Unknown"));
                 
                 return view;
             }

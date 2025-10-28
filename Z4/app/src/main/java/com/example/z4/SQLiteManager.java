@@ -235,6 +235,26 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
     public int deleteGenre(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
+        
+        // First, get all songs with this genre
+        Cursor songCursor = db.query(TABLE_SONGS, new String[]{SONG_ID}, 
+                                     SONG_GENRE_ID + " = ?", new String[]{String.valueOf(id)}, 
+                                     null, null, null);
+        
+        // Remove these songs from all playlists
+        while (songCursor.moveToNext()) {
+            int songId = songCursor.getInt(songCursor.getColumnIndexOrThrow(SONG_ID));
+            db.delete(TABLE_PLAYLIST_SONGS, PLAYLIST_SONG_SONG_ID + " = ?", new String[]{String.valueOf(songId)});
+        }
+        songCursor.close();
+        
+        // Delete all songs with this genre
+        db.delete(TABLE_SONGS, SONG_GENRE_ID + " = ?", new String[]{String.valueOf(id)});
+        
+        // Delete all artists with this genre
+        db.delete(TABLE_ARTISTS, ARTIST_GENRE_ID + " = ?", new String[]{String.valueOf(id)});
+        
+        // Finally delete the genre
         return db.delete(TABLE_GENRES, GENRE_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
@@ -309,6 +329,23 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
     public int deleteArtist(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
+        
+        // First, get all songs by this artist
+        Cursor cursor = db.query(TABLE_SONGS, new String[]{SONG_ID}, 
+                                 SONG_ARTIST_ID + " = ?", new String[]{String.valueOf(id)}, 
+                                 null, null, null);
+        
+        // Remove these songs from all playlists
+        while (cursor.moveToNext()) {
+            int songId = cursor.getInt(cursor.getColumnIndexOrThrow(SONG_ID));
+            db.delete(TABLE_PLAYLIST_SONGS, PLAYLIST_SONG_SONG_ID + " = ?", new String[]{String.valueOf(songId)});
+        }
+        cursor.close();
+        
+        // Then delete all songs by this artist
+        db.delete(TABLE_SONGS, SONG_ARTIST_ID + " = ?", new String[]{String.valueOf(id)});
+        
+        // Finally delete the artist
         return db.delete(TABLE_ARTISTS, ARTIST_ID + " = ?", new String[]{String.valueOf(id)});
     }
 
@@ -453,6 +490,9 @@ public class SQLiteManager extends SQLiteOpenHelper {
 
     public int deleteSong(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
+        // First remove song from all playlists
+        db.delete(TABLE_PLAYLIST_SONGS, PLAYLIST_SONG_SONG_ID + " = ?", new String[]{String.valueOf(id)});
+        // Then delete the song
         return db.delete(TABLE_SONGS, SONG_ID + " = ?", new String[]{String.valueOf(id)});
     }
 

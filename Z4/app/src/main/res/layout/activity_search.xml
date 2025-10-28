@@ -59,32 +59,34 @@
         android:id="@+id/textViewGenre"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Genre:"
+        android:text="Genre name:"
         android:textSize="16sp"
         android:layout_marginBottom="8dp"
         android:visibility="gone" />
 
-    <Spinner
-        android:id="@+id/spinnerGenre"
+    <EditText
+        android:id="@+id/editTextGenreName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
+        android:hint="Enter genre name"
         android:visibility="gone" />
 
     <TextView
         android:id="@+id/textViewArtist"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Artist:"
+        android:text="Artist name:"
         android:textSize="16sp"
         android:layout_marginBottom="8dp"
         android:visibility="gone" />
 
-    <Spinner
-        android:id="@+id/spinnerArtist"
+    <EditText
+        android:id="@+id/editTextArtistName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
+        android:hint="Enter artist name"
         android:visibility="gone" />
 
     <Button
