@@ -36,6 +36,10 @@ public class PlaylistsFragment extends Fragment {
         // Required empty public constructor
     }
 
+    public static PlaylistsFragment newInstance() {
+        return new PlaylistsFragment();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
